@@ -72,4 +72,4 @@ def visualize_random_states(dataset_path: str, num_samples: int = 5, num_visuali
         generate_visualization(dataset, num_samples, full_save_path)
 
 if __name__ == "__main__":
-    visualize_random_states("tictac_dataset.json", num_samples=5, num_visualizations=3) 
+    visualize_random_states("tictac_dataset.json", num_samples=5, num_visualizations=12) 
