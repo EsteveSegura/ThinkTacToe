@@ -1,11 +1,17 @@
-matplotlib>=3.7.0
-numpy>=1.24.0
-torch>=2.1.0
-peft>=0.7.0
-tqdm>=4.66.0 
-transformers>=4.38.0
-datasets>=2.14.0
-trl>=0.7.1
-accelerate>=0.23.0
-bitsandbytes
-huggingface_hub
+# Base
+matplotlib==3.7.1
+numpy==1.24.4
+tqdm==4.66.2
+
+# Core stack
+torch==2.1.2
+transformers==4.37.2
+trl==0.7.1
+peft==0.7.1
+datasets==2.14.6
+accelerate==0.25.0
+bitsandbytes==0.42.0
+huggingface_hub==0.20.3
+
+# Backport para Python < 3.10
+importlib_metadata==6.8.0  # Necesario para torch.distributed en Python 3.9
