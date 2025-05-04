@@ -2,7 +2,9 @@ import os
 from huggingface_hub import login
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from datasets import load_dataset
-from trl import SFTTrainer, TrainingArguments
+from trl import SFTTrainer
+from transformers import TrainingArguments
+
 
 login(token=os.environ["HF_TOKEN"])
 
