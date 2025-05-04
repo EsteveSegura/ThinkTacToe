@@ -1,0 +1,14 @@
+tmp/
+__pycache__/
+*.pyc
+
+*.jsonl
+*.json
+
+.env
+.venv
+venv/
+ENV/
+
+.DS_Store
+Thumbs.db 
