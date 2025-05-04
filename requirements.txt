@@ -1,16 +1,11 @@
-# Visualización
 matplotlib>=3.7.0
 numpy>=1.24.0
-
-# Procesamiento de datos
-datasets>=2.15.0
 torch>=2.1.0
-
-# Modelo y entrenamiento
-transformers>=4.36.0
-trl>=0.7.4
-accelerate>=0.25.0
 peft>=0.7.0
-
-# Utilidades
 tqdm>=4.66.0 
+transformers>=4.38.0
+datasets>=2.14.0
+trl>=0.7.1
+accelerate>=0.23.0
+bitsandbytes
+huggingface_hub
