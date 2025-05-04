@@ -23,6 +23,7 @@ trainer = SFTTrainer(
     tokenizer=tokenizer,
     train_dataset=dataset,
     max_seq_length=512,
+    dataset_text_field="text",
     args=dict(
         per_device_train_batch_size=1,
         num_train_epochs=1,
