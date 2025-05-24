@@ -8,13 +8,10 @@ tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True).to(device).eval()
 
 def infer(prompt: str, max_new_tokens: int = 32):
-    inputs = tokenizer(prompt, return_tensors="pt").to(device)
+    inputs = tokenizer(prompt, return_tensors="pt", add_special_tokens=False).to(device)
 
     eos_token = "<|end|>"
-    if eos_token in tokenizer.get_vocab():
-        eos_token_id = tokenizer.convert_tokens_to_ids(eos_token)
-    else:
-        eos_token_id = tokenizer.eos_token_id  # fallback por si acaso
+    eos_token_id = tokenizer.convert_tokens_to_ids(eos_token) if eos_token in tokenizer.get_vocab() else tokenizer.eos_token_id
 
     with torch.no_grad():
         outputs = model.generate(
@@ -23,8 +20,8 @@ def infer(prompt: str, max_new_tokens: int = 32):
             eos_token_id=eos_token_id,
         )
 
-    output_tokens = outputs[0]
-    output_text = tokenizer.decode(output_tokens, skip_special_tokens=True)
+    new_tokens = outputs[0][inputs["input_ids"].shape[1]:]
+    output_text = tokenizer.decode(new_tokens, skip_special_tokens=True)
 
     print("Respuesta del modelo:\n" + output_text)
 
