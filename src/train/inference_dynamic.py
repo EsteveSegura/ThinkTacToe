@@ -67,19 +67,38 @@ def infer(prompt: str, max_new_tokens: int = 300) -> str:
 
     return output_text
 
+def generate_random_board() -> List[List[Optional[str]]]:
+    """Genera un tablero aleatorio con algunos movimientos."""
+    board = create_empty_board()
+    players = ['X', 'O']
+    current_player = 0
+    
+    # Hacer entre 2 y 4 movimientos aleatorios
+    num_moves = random.randint(2, 4)
+    for _ in range(num_moves):
+        valid_moves = get_valid_moves(board)
+        if not valid_moves:
+            break
+        move = random.choice(valid_moves)
+        board = apply_move(board, players[current_player], move)
+        current_player = (current_player + 1) % 2
+    
+    return board
+
 def generate_scenario_board() -> List[List[Optional[str]]]:
-    """Genera un tablero con un escenario específico."""
+    """Genera un tablero con un escenario específico o aleatorio."""
     scenarios = [
         generate_win_scenario,
         generate_block_scenario,
-        generate_neutral_scenario
+        generate_neutral_scenario,
+        generate_random_board  # Añadimos la generación aleatoria como una opción
     ]
     return random.choice(scenarios)()
 
 def main():
     """Función principal que genera tableros, hace inferencia y visualiza los resultados."""
     while True:
-        # Generar tablero con escenario específico
+        # Generar tablero con escenario específico o aleatorio
         board = generate_scenario_board()
         
         # Convertir a formato tokenizado
