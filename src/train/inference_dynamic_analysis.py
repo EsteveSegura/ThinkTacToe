@@ -137,7 +137,11 @@ def board_to_string(board: list) -> str:
     """
     Convierte el tablero a una representación de string.
     """
-    return '\n'.join([''.join(row) for row in board])
+    if not board:
+        return "Tablero vacío"
+    
+    # Convertir cada elemento a string y manejar None
+    return '\n'.join([''.join(str(cell) if cell is not None else ' ' for cell in row) for row in board])
 
 if __name__ == "__main__":
     # Configuración del modelo
