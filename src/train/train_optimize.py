@@ -21,7 +21,6 @@ if tokenizer.pad_token is None:
 model.resize_token_embeddings(len(tokenizer))
 
 model.gradient_checkpointing_enable()
-model = torch.compile(model)
 
 dataset = load_dataset("json", data_files="tictactoe_hf.json", split="train")
 
