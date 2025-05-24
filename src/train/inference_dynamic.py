@@ -1,56 +1,73 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import random
-from typing import List, Tuple, Optional
-import re
 import sys
 import os
-import time
+from pathlib import Path
 
-# Añadir el directorio raíz al path de Python
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Añadir el directorio raíz del proyecto al path
+project_root = Path(__file__).parent.parent.parent
+sys.path.append(str(project_root))
 
 from src.dataset.board_engine import (
     create_empty_board,
-    get_valid_moves,
     apply_move,
-    check_winner,
-    is_draw,
-    generate_win_scenario,
-    generate_block_scenario,
-    generate_neutral_scenario
+    print_board,
+    get_valid_moves,
+    next_player
 )
 from src.dataset.board_tokenizer import board_to_token_representation
 
-# Inicializar el generador aleatorio con una semilla basada en el tiempo
-random.seed(time.time())
+def create_random_board() -> list:
+    """
+    Crea un tablero aleatorio con algunos movimientos ya realizados.
+    """
+    board = create_empty_board()
+    num_moves = random.randint(2, 6)  # Entre 2 y 6 movimientos iniciales
+    
+    for _ in range(num_moves):
+        valid_moves = get_valid_moves(board)
+        if not valid_moves:
+            break
+        move = random.choice(valid_moves)
+        player = next_player(board)
+        board = apply_move(board, player, move)
+    
+    return board
 
-# Configuración del modelo
-model_name = "./qwen2.5-1.5b-tictactoe/checkpoint-3500"
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True).to(device).eval()
+def parse_model_move(model_output: str) -> tuple:
+    """
+    Extrae las coordenadas del movimiento del modelo.
+    Ejemplo: <|move|><|2-2|><|end|> -> (2, 2)
+    """
+    try:
+        # Extraer la parte entre <| y |>
+        move_part = model_output.split("<|move|><|")[1].split("|><|end|>")[0]
+        row, col = map(int, move_part.split("-"))
+        return (row, col)
+    except:
+        return None
 
-def parse_move(move_str: str) -> Tuple[int, int]:
-    """Extrae las coordenadas del movimiento del formato tokenizado."""
-    match = re.search(r'<\|(\d)-(\d)\|>', move_str)
-    if match:
-        return (int(match.group(1)), int(match.group(2)))
-    raise ValueError(f"Formato de movimiento inválido: {move_str}")
+def visualize_game_state(initial_board: list, model_move: tuple = None):
+    """
+    Visualiza el estado inicial del tablero y el movimiento del modelo.
+    """
+    print("\nEstado inicial del tablero:")
+    print_board(initial_board)
+    
+    if model_move:
+        row, col = model_move
+        print(f"\nMovimiento del modelo: ({row}, {col})")
+        
+        # Aplicar el movimiento
+        final_board = apply_move(initial_board, 'X', model_move)
+        print("\nEstado final del tablero:")
+        print_board(final_board)
 
-def print_board(board: List[List[Optional[str]]], title: str = ""):
-    """Imprime el tablero en la terminal."""
-    if title:
-        print(f"\n{title}")
-    print("  0 1 2")
-    for i, row in enumerate(board):
-        print(f"{i} ", end="")
-        for cell in row:
-            print(f"{cell if cell else ' '} ", end="")
-        print()
-
-def infer(prompt: str, max_new_tokens: int = 300) -> str:
-    """Realiza la inferencia con el modelo."""
+def infer(prompt: str, max_new_tokens: int = 32):
+    """
+    Realiza la inferencia con el modelo y retorna el movimiento.
+    """
     inputs = tokenizer(prompt, return_tensors="pt", add_special_tokens=False).to(device)
 
     eos_token = "<|end|>"
@@ -71,79 +88,35 @@ def infer(prompt: str, max_new_tokens: int = 300) -> str:
 
     return output_text
 
-def generate_random_board() -> List[List[Optional[str]]]:
-    """Genera un tablero aleatorio con algunos movimientos."""
-    board = create_empty_board()
-    players = ['X', 'O']
-    current_player = 0
-    
-    # Hacer entre 2 y 4 movimientos aleatorios
-    num_moves = random.randint(2, 4)
-    for _ in range(num_moves):
-        valid_moves = get_valid_moves(board)
-        if not valid_moves:
-            break
-        # Mezclar los movimientos válidos para mayor aleatoriedad
-        random.shuffle(valid_moves)
-        move = valid_moves[0]
-        board = apply_move(board, players[current_player], move)
-        current_player = (current_player + 1) % 2
-    
-    return board
-
-def generate_scenario_board() -> List[List[Optional[str]]]:
-    """Genera un tablero con un escenario específico o aleatorio."""
-    scenarios = [
-        generate_win_scenario,
-        generate_block_scenario,
-        generate_neutral_scenario,
-        generate_random_board
-    ]
-    # Mezclar los escenarios para mayor aleatoriedad
-    random.shuffle(scenarios)
-    return scenarios[0]()
-
-def main():
-    """Función principal que genera tableros, hace inferencia y visualiza los resultados."""
-    while True:
-        # Generar tablero con escenario específico o aleatorio
-        board = generate_scenario_board()
-        
-        # Convertir a formato tokenizado
-        board_str = board_to_token_representation(board)
-        
-        # Mostrar tablero original
-        print("\n" + "="*50)
-        print("Tablero Original:")
-        print_board(board)
-        
-        # Realizar inferencia
-        print("\nRealizando inferencia...")
-        response = infer(board_str)
-        print(f"Respuesta del modelo: {response}")
-        
-        # Extraer y aplicar el movimiento
-        try:
-            move = parse_move(response)
-            new_board = apply_move(board, 'X', move)
-            
-            # Mostrar tablero con el movimiento
-            print("\nTablero con Movimiento:")
-            print_board(new_board)
-            
-            # Verificar resultado
-            winner = check_winner(new_board)
-            if winner:
-                print(f"\n¡{winner} ha ganado!")
-            elif is_draw(new_board):
-                print("\n¡Empate!")
-                
-        except ValueError as e:
-            print(f"Error al procesar el movimiento: {e}")
-        
-        # Preguntar si continuar
-        if input("\n¿Continuar? (s/n): ").lower() != 's':
-            break
-
 if __name__ == "__main__":
-    main() 
+    # Configuración del modelo
+    model_name = "./qwen2.5-1.5b-tictactoe/checkpoint-38115"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True).to(device).eval()
+
+    # Generar y procesar tableros aleatorios
+    num_games = 5  # Número de juegos a simular
+    
+    for game in range(num_games):
+        print(f"\n{'='*50}")
+        print(f"Juego {game + 1}/{num_games}")
+        print(f"{'='*50}")
+        
+        # Crear tablero aleatorio
+        board = create_random_board()
+        
+        # Convertir a formato de prompt
+        prompt = board_to_token_representation(board)
+        
+        # Obtener respuesta del modelo
+        model_output = infer(prompt)
+        print("\nRespuesta del modelo:", model_output)
+        
+        # Extraer y visualizar el movimiento
+        move = parse_model_move(model_output)
+        if move:
+            visualize_game_state(board, move)
+        else:
+            print("\nError al parsear el movimiento del modelo")
+            visualize_game_state(board) 
