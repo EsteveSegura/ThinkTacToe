@@ -3,6 +3,12 @@ import torch
 import random
 from typing import List, Tuple, Optional
 import re
+import sys
+import os
+
+# Añadir el directorio raíz al path de Python
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 from src.dataset.board_engine import (
     create_empty_board,
     get_valid_moves,
