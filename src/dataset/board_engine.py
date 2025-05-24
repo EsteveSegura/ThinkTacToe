@@ -14,9 +14,28 @@ def print_board(board: Board) -> None:
     print()
 
 def is_valid_board(board: Board) -> bool:
-    x_count = sum(cell == 'X' for row in board for cell in row)
-    o_count = sum(cell == 'O' for row in board for cell in row)
-    return x_count == o_count or x_count == o_count + 1
+    """
+    Verifica si el tablero está en un estado legal.
+    """
+    if not board or len(board) != 3:
+        return False
+    
+    for row in board:
+        if not row or len(row) != 3:
+            return False
+        for cell in row:
+            if cell not in [None, 'X', 'O']:
+                return False
+    
+    # Contar X y O
+    x_count = sum(row.count('X') for row in board)
+    o_count = sum(row.count('O') for row in board)
+    
+    # Verificar que la diferencia entre X y O sea 0 o 1
+    if abs(x_count - o_count) > 1:
+        return False
+    
+    return True
 
 def check_winner(board: Board) -> Optional[Player]:
     lines = []
@@ -36,14 +55,26 @@ def check_winner(board: Board) -> Optional[Player]:
     return None
 
 def is_draw(board: Board) -> bool:
-    return all(cell is not None for row in board for cell in row) and check_winner(board) is None
+    """
+    Verifica si el juego terminó en empate.
+    """
+    return all(cell is not None for row in board for cell in row)
 
 def get_valid_moves(board: Board) -> List[Tuple[int, int]]:
     return [(i, j) for i in range(3) for j in range(3) if board[i][j] is None]
 
 def apply_move(board: Board, player: Player, move: Tuple[int, int]) -> Board:
-    new_board = [row[:] for row in board]
+    """
+    Aplica un movimiento al tablero.
+    """
     i, j = move
+    
+    # Verificar que la celda esté vacía
+    if board[i][j] is not None:
+        raise ValueError(f"Move {move} is invalid: cell already occupied")
+    
+    # Crear una copia del tablero
+    new_board = [row[:] for row in board]
     new_board[i][j] = player
     return new_board
 

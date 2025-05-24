@@ -12,56 +12,70 @@ from board_engine import (
 from board_tokenizer import board_to_token_representation
 from think_generator import generate_think_text
 
-def generate_complete_game() -> List[Dict]:
+def generate_complete_game() -> List[dict]:
     """
-    Genera un juego completo de Tic Tac Toe y retorna una lista de estados
-    con sus respectivos movimientos y razonamientos.
+    Genera un juego completo de tres en raya.
     """
     board = create_empty_board()
-    game_states = []
+    states = []
+    current_player = 'X'
+    
+    # Verificar que el tablero inicial es válido
+    assert is_valid_board(board), "Tablero inicial inválido"
     
     while True:
-        current_player = next_player(board)
+        # Verificar si el juego ya terminó
+        if check_winner(board) or is_draw(board):
+            break
+            
         valid_moves = get_valid_moves(board)
-        
         if not valid_moves:
             break
             
-        # Determinar el tipo de movimiento
         move_type = "neutral"
+        selected_move = None
+        
+        # Ver si puedo ganar
         for move in valid_moves:
-            # Probar si es un movimiento ganador
             test_board = apply_move(board, current_player, move)
             if check_winner(test_board) == current_player:
                 move_type = "win"
+                selected_move = move
                 break
-                
-            # Probar si es un movimiento de bloqueo
+        
+        # Ver si debo bloquear
+        if selected_move is None:
             opponent = 'O' if current_player == 'X' else 'X'
-            test_board = apply_move(board, opponent, move)
-            if check_winner(test_board) == opponent:
-                move_type = "block"
-                break
+            for move in valid_moves:
+                test_board = apply_move(board, opponent, move)
+                if check_winner(test_board) == opponent:
+                    move_type = "block"
+                    selected_move = move
+                    break
         
-        # Seleccionar un movimiento válido
-        move = random.choice(valid_moves)
+        # Si no hay win ni block, elijo al azar
+        if selected_move is None:
+            selected_move = random.choice(valid_moves)
         
-        # Generar el estado actual
+        # Crear el estado con el formato correcto
         state = {
             "board": board_to_token_representation(board),
-            "think": generate_think_text(move_type, move),
-            "move": f"<|move|><|{move[0]}-{move[1]}|><|end|>"
+            "think": generate_think_text(move_type, selected_move),
+            "move": f"<|move|><|{selected_move[0]}-{selected_move[1]}|><|end|>"
         }
-        game_states.append(state)
+        states.append(state)
         
         # Aplicar el movimiento
-        board = apply_move(board, current_player, move)
-        
-        # Verificar si el juego ha terminado
+        board = apply_move(board, current_player, selected_move)
+
+        # ✅ Verificar si el juego terminó DESPUÉS del movimiento
         if check_winner(board) or is_draw(board):
             break
+
+        # Cambiar de jugador
+        current_player = 'O' if current_player == 'X' else 'X'
     
-    return game_states
+    return states
 
 def generate_dataset(num_games: int = 5000) -> List[Dict]:
     """
