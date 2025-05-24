@@ -18,8 +18,7 @@ from src.dataset.board_engine import (
     print_board,
     get_valid_moves,
     next_player,
-    check_winner,
-    is_board_full
+    check_winner
 )
 from src.dataset.board_tokenizer import board_to_token_representation
 
