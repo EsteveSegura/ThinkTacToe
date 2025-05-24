@@ -23,6 +23,9 @@ def infer(prompt: str, max_new_tokens: int = 32):
     new_tokens = outputs[0][inputs["input_ids"].shape[1]:]
     output_text = tokenizer.decode(new_tokens, skip_special_tokens=True)
 
+    if "<|end|>" in output_text:
+        output_text = output_text.split("<|end|>")[0] + "<|end|>"
+
     print("Respuesta del modelo:\n" + output_text)
 
 if __name__ == "__main__":
