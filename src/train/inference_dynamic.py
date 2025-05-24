@@ -5,6 +5,7 @@ from typing import List, Tuple, Optional
 import re
 import sys
 import os
+import time
 
 # Añadir el directorio raíz al path de Python
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -20,6 +21,9 @@ from src.dataset.board_engine import (
     generate_neutral_scenario
 )
 from src.dataset.board_tokenizer import board_to_token_representation
+
+# Inicializar el generador aleatorio con una semilla basada en el tiempo
+random.seed(time.time())
 
 # Configuración del modelo
 model_name = "./qwen2.5-1.5b-tictactoe/checkpoint-3500"
@@ -79,7 +83,9 @@ def generate_random_board() -> List[List[Optional[str]]]:
         valid_moves = get_valid_moves(board)
         if not valid_moves:
             break
-        move = random.choice(valid_moves)
+        # Mezclar los movimientos válidos para mayor aleatoriedad
+        random.shuffle(valid_moves)
+        move = valid_moves[0]
         board = apply_move(board, players[current_player], move)
         current_player = (current_player + 1) % 2
     
@@ -91,9 +97,11 @@ def generate_scenario_board() -> List[List[Optional[str]]]:
         generate_win_scenario,
         generate_block_scenario,
         generate_neutral_scenario,
-        generate_random_board  # Añadimos la generación aleatoria como una opción
+        generate_random_board
     ]
-    return random.choice(scenarios)()
+    # Mezclar los escenarios para mayor aleatoriedad
+    random.shuffle(scenarios)
+    return scenarios[0]()
 
 def main():
     """Función principal que genera tableros, hace inferencia y visualiza los resultados."""
