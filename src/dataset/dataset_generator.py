@@ -63,7 +63,7 @@ def generate_complete_game() -> List[Dict]:
     
     return game_states
 
-def generate_dataset(num_games: int = 10000) -> List[Dict]:
+def generate_dataset(num_games: int = 5000) -> List[Dict]:
     """
     Genera un dataset completo con el número especificado de juegos.
     """
@@ -82,8 +82,8 @@ def save_dataset(dataset: List[Dict], filename: str = "tictac_dataset.json"):
         json.dump(dataset, f, indent=2)
 
 if __name__ == "__main__":
-    print("Generando dataset de 10,000 juegos...")
-    dataset = generate_dataset(10000)
+    print("Generando dataset de 5,000 juegos...")
+    dataset = generate_dataset(5000)
     print(f"Dataset generado con {len(dataset)} ejemplos")
     save_dataset(dataset)
     print("Dataset guardado en tictac_dataset.json") 
