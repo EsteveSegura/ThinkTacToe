@@ -27,14 +27,14 @@ def generate_complete_game() -> List[dict]:
         # Verificar si el juego ya terminó
         if check_winner(board) or is_draw(board):
             break
-            
+
         valid_moves = get_valid_moves(board)
         if not valid_moves:
             break
-            
+
         move_type = "neutral"
         selected_move = None
-        
+
         # Ver si puedo ganar
         for move in valid_moves:
             test_board = apply_move(board, current_player, move)
@@ -42,7 +42,7 @@ def generate_complete_game() -> List[dict]:
                 move_type = "win"
                 selected_move = move
                 break
-        
+
         # Ver si debo bloquear
         if selected_move is None:
             opponent = 'O' if current_player == 'X' else 'X'
@@ -52,29 +52,35 @@ def generate_complete_game() -> List[dict]:
                     move_type = "block"
                     selected_move = move
                     break
-        
+
         # Si no hay win ni block, elijo al azar
         if selected_move is None:
             selected_move = random.choice(valid_moves)
-        
-        # Crear el estado con el formato correcto
+
+        i, j = selected_move
+        # ✅ Verificar explícitamente que la celda está libre
+        if board[i][j] is not None:
+            continue  # debería ser imposible, pero por seguridad
+
+        # Crear el estado antes de aplicar el movimiento
         state = {
             "board": board_to_token_representation(board),
             "think": generate_think_text(move_type, selected_move),
-            "move": f"<|move|><|{selected_move[0]}-{selected_move[1]}|><|end|>"
+            "move": f"<|move|><|{i}-{j}|><|end|>"
         }
-        states.append(state)
-        
+
         # Aplicar el movimiento
         board = apply_move(board, current_player, selected_move)
 
         # ✅ Verificar si el juego terminó DESPUÉS del movimiento
         if check_winner(board) or is_draw(board):
-            break
+            break  # no se guarda este movimiento, porque el juego terminó
+
+        states.append(state)
 
         # Cambiar de jugador
         current_player = 'O' if current_player == 'X' else 'X'
-    
+
     return states
 
 def generate_dataset(num_games: int = 5000) -> List[Dict]:
@@ -100,4 +106,4 @@ if __name__ == "__main__":
     dataset = generate_dataset(5000)
     print(f"Dataset generado con {len(dataset)} ejemplos")
     save_dataset(dataset)
-    print("Dataset guardado en tictac_dataset.json") 
+    print("Dataset guardado en tictac_dataset.json")
