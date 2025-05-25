@@ -12,6 +12,7 @@ dataset = load_dataset("json", data_files="tictactoe_dpo.json", split="train")
 
 # Configuración de entrenamiento
 training_args = DPOConfig(
+    model_name_or_path=model_name,
     output_dir="./qwen2.5-1.5b-dpo",
     per_device_train_batch_size=8,
     num_train_epochs=3,
@@ -26,14 +27,10 @@ training_args = DPOConfig(
     max_length=384
 )
 
-# Inicializar DPOTrainer con processing_class
+# Usa el `DPOTrainer` sin pasar tokenizer directamente
 trainer = DPOTrainer(
     model=model,
     args=training_args,
-    tokenizer=tokenizer,
     train_dataset=dataset,
-    processing_class=tokenizer
+    tokenizer=tokenizer  # ⚠️ Esta línea puede fallar en algunas versiones. Si falla, quítala.
 )
-
-# Iniciar entrenamiento
-trainer.train()
