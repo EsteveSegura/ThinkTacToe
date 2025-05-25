@@ -6,7 +6,7 @@ tqdm==4.66.2
 # Core stack
 torch==2.1.2
 transformers==4.37.2
-trl==0.7.1
+trl==0.8.6  # actualizado para tener DPOTrainer y DPOConfig
 peft==0.7.1
 datasets==2.14.6
 accelerate==0.25.0
