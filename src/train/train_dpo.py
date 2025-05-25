@@ -1,18 +1,21 @@
-from trl import DPOTrainer, DPOConfig
-from transformers import AutoTokenizer, AutoModelForCausalLM
+import os
 from datasets import load_dataset
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import TrainingArguments
+from trl import DPOTrainer, DPOConfig
+from trl.trainer.utils import DPODataCollatorWithPadding
 
-# Cargar modelo y tokenizer
+# Modelo base
 model_name = "Qwen/Qwen2.5-1.5B"
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-tokenizer.pad_token = tokenizer.eos_token  # Asegurar que el token de padding esté definido
+tokenizer.pad_token = tokenizer.eos_token  # asegurarse de tener pad_token
 
 model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
 
-# Cargar dataset
+# Dataset
 dataset = load_dataset("json", data_files="tictactoe_dpo.json", split="train")
 
-# Configuración de entrenamiento
+# Configuración
 training_args = DPOConfig(
     output_dir="./qwen2.5-1.5b-dpo",
     per_device_train_batch_size=8,
@@ -23,18 +26,31 @@ training_args = DPOConfig(
     save_steps=250,
     save_total_limit=1,
     report_to="none",
-    beta=0.1,  # Controla la penalización de las respuestas rechazadas
+    beta=0.1,
     max_prompt_length=256,
-    max_length=384  # prompt + respuesta
+    max_length=384
 )
 
-# Inicializar el entrenador
+training_args.tokenizer = tokenizer  # importante
+
+# Collator para DPO
+data_collator = DPODataCollatorWithPadding(tokenizer=tokenizer)
+
+# Función para preprocesar
+def preprocess(example):
+    return {
+        "prompt": example["prompt"],
+        "chosen": example["chosen"],
+        "rejected": example["rejected"]
+    }
+
+# Entrenador
 trainer = DPOTrainer(
     model=model,
     args=training_args,
+    train_dataset=dataset.map(preprocess),
     tokenizer=tokenizer,
-    train_dataset=dataset
+    data_collator=data_collator
 )
 
-# Iniciar entrenamiento
 trainer.train()
