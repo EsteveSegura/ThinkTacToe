@@ -1,41 +1,41 @@
-from trl import DPOTrainer
-from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments
+import torch
 from datasets import load_dataset
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from trl import DPOTrainer, DPOConfig
 
+# Cargar el dataset
+dataset = load_dataset('json', data_files='dataset.json', split='train')
+
+# Configuración del modelo
 model_name = "Qwen/Qwen2.5-1.5B"
-tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
 
-# Tu dataset con campos: prompt, chosen, rejected
-dataset = load_dataset("json", data_files="tictactoe_dpo.json", split="train")
-
-# Tokenizar
-def preprocess(example):
-    return {
-        "prompt_input_ids": tokenizer(example["prompt"], truncation=True, max_length=256)["input_ids"],
-        "chosen_input_ids": tokenizer(example["chosen"], truncation=True, max_length=128)["input_ids"],
-        "rejected_input_ids": tokenizer(example["rejected"], truncation=True, max_length=128)["input_ids"],
-    }
-
-tokenized_dataset = dataset.map(preprocess)
-
-# Entrenamiento
-training_args = TrainingArguments(
-    output_dir="./qwen2.5-1.5b-dpo",
-    per_device_train_batch_size=2,
+# Configuración de DPO
+config = DPOConfig(
+    beta=0.01,
+    learning_rate=1e-6,
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=2,
     num_train_epochs=1,
-    learning_rate=5e-6,
-    fp16=True,
+    max_prompt_length=512,
+    max_length=1024,
+    lr_scheduler_type="cosine",
+    warmup_ratio=0.05,
+    output_dir="./qwen2.5-1.5b-dpo",
     logging_steps=10,
-    save_steps=250,
-    report_to="none",
-    beta=0.1
+    save_strategy="epoch",
+    bf16=True
 )
 
+# Inicializar el entrenador DPO
 trainer = DPOTrainer(
     model=model,
-    args=training_args,
-    train_dataset=tokenized_dataset,
+    ref_model=None,  # Si no se proporciona, se utiliza una copia del modelo actual
+    args=config,
+    tokenizer=tokenizer,
+    train_dataset=dataset
 )
 
+# Iniciar el entrenamiento
 trainer.train()
