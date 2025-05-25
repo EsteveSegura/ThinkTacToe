@@ -28,11 +28,9 @@ trainer = DPOTrainer(
     args=training_args,
     tokenizer=tokenizer,
     train_dataset=dataset,
-    beta=0.1,
-    dpo_kwargs={
-        "max_prompt_length": 256,
-        "max_response_length": 128,
-    }
+    max_prompt_length=256,
+    max_response_length=128,
+    beta=0.1  # controla qué tanto castiga respuestas malas
 )
 
 trainer.train()
