@@ -60,11 +60,11 @@ def visualize_game_state(initial_board: list, model_move: tuple = None):
         print(f"\nMovimiento del modelo: ({row}, {col})")
         
         # Aplicar el movimiento
-        final_board = apply_move(initial_board, 'X', model_move)
+        final_board = apply_move(initial_board, 'Ô', model_move)
         print("\nEstado final del tablero:")
         print_board(final_board)
 
-def infer(prompt: str, max_new_tokens: int = 32):
+def infer(prompt: str, max_new_tokens: int = 300):
     """
     Realiza la inferencia con el modelo y retorna el movimiento.
     """
@@ -90,7 +90,7 @@ def infer(prompt: str, max_new_tokens: int = 32):
 
 if __name__ == "__main__":
     # Configuración del modelo
-    model_name = "./qwen2.5-1.5b-tictactoe/checkpoint-38115"
+    model_name = "./qwen2.5-1.5b-tictactoe/checkpoint-6750"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True).to(device).eval()
