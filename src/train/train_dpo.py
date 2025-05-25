@@ -4,7 +4,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from trl import DPOTrainer, DPOConfig
 
 # Cargar el dataset
-dataset = load_dataset('json', data_files='dataset.json', split='train')
+dataset = load_dataset('json', data_files='tictactoe_dpo.json', split='train')
 
 # Configuración del modelo
 model_name = "Qwen/Qwen2.5-1.5B"
