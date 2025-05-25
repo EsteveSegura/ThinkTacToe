@@ -28,14 +28,14 @@ training_args = TrainingArguments(
     fp16=True,
     logging_steps=10,
     save_steps=250,
-    report_to="none"
+    report_to="none",
+    beta=0.1
 )
 
 trainer = DPOTrainer(
     model=model,
     args=training_args,
     train_dataset=tokenized_dataset,
-    beta=0.1
 )
 
 trainer.train()
