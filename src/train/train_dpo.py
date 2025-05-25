@@ -1,5 +1,5 @@
-from trl import DPOTrainer, DPOConfig
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from trl import DPOTrainer
+from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments
 from datasets import load_dataset
 
 # Cargar modelo y tokenizer
@@ -10,9 +10,8 @@ model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
 # Cargar conjunto de datos
 dataset = load_dataset("json", data_files="tictactoe_dpo.json", split="train")
 
-# Configuración de entrenamiento
-training_args = DPOConfig(
-    model_name_or_path=model_name,
+# Configuración de entrenamiento (usa TrainingArguments, no DPOConfig)
+training_args = TrainingArguments(
     output_dir="./qwen2.5-1.5b-dpo",
     per_device_train_batch_size=8,
     num_train_epochs=3,
@@ -21,16 +20,19 @@ training_args = DPOConfig(
     logging_steps=10,
     save_steps=250,
     save_total_limit=1,
-    report_to="none",
+    report_to="none"
+)
+
+# Instanciar DPOTrainer sin DPOConfig
+trainer = DPOTrainer(
+    model=model,
+    args=training_args,
     beta=0.1,
+    train_dataset=dataset,
+    tokenizer=tokenizer,
     max_prompt_length=256,
     max_length=384
 )
 
-# Usa el `DPOTrainer` sin pasar tokenizer directamente
-trainer = DPOTrainer(
-    model=model,
-    args=training_args,
-    train_dataset=dataset,
-    tokenizer=tokenizer  # ⚠️ Esta línea puede fallar en algunas versiones. Si falla, quítala.
-)
+# Iniciar entrenamiento
+trainer.train()
