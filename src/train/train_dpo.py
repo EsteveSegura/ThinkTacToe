@@ -6,14 +6,14 @@ from trl import DPOTrainer, DPOConfig
 # Modelo base
 model_name = "Qwen/Qwen2.5-1.5B"
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-tokenizer.pad_token = tokenizer.eos_token  # Asegurar que el token de padding esté definido
+tokenizer.pad_token = tokenizer.eos_token  # obligatorio
 
 model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
 
-# Dataset
+# Dataset con campos prompt, chosen, rejected
 dataset = load_dataset("json", data_files="tictactoe_dpo.json", split="train")
 
-# Configuración
+# Configuración de entrenamiento
 training_args = DPOConfig(
     output_dir="./qwen2.5-1.5b-dpo",
     per_device_train_batch_size=8,
@@ -28,12 +28,12 @@ training_args = DPOConfig(
     max_prompt_length=256,
     max_length=384
 )
+training_args.tokenizer = tokenizer  # necesario para DPOTrainer
 
-# Entrenador
+# Entrenador DPO
 trainer = DPOTrainer(
     model=model,
     args=training_args,
-    tokenizer=tokenizer,
     train_dataset=dataset
 )
 
