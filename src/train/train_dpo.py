@@ -1,14 +1,12 @@
 import os
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from transformers import TrainingArguments
 from trl import DPOTrainer, DPOConfig
-from trl.trainer.utils import DPODataCollatorWithPadding
 
 # Modelo base
 model_name = "Qwen/Qwen2.5-1.5B"
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-tokenizer.pad_token = tokenizer.eos_token  # asegurarse de tener pad_token
+tokenizer.pad_token = tokenizer.eos_token  # Asegurar que el token de padding esté definido
 
 model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
 
@@ -31,26 +29,12 @@ training_args = DPOConfig(
     max_length=384
 )
 
-training_args.tokenizer = tokenizer  # importante
-
-# Collator para DPO
-data_collator = DPODataCollatorWithPadding(tokenizer=tokenizer)
-
-# Función para preprocesar
-def preprocess(example):
-    return {
-        "prompt": example["prompt"],
-        "chosen": example["chosen"],
-        "rejected": example["rejected"]
-    }
-
 # Entrenador
 trainer = DPOTrainer(
     model=model,
     args=training_args,
-    train_dataset=dataset.map(preprocess),
     tokenizer=tokenizer,
-    data_collator=data_collator
+    train_dataset=dataset
 )
 
 trainer.train()
