@@ -1,6 +1,6 @@
 from datasets import Dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from trl import DPOConfig, DPOTrainer
+from trl import DPOConfig, DPOTrainer, preprocess_dpo_dataset
 import json
 
 # Cargar modelo y tokenizer
@@ -13,6 +13,25 @@ with open('./tictactoe_dpo.json', 'r') as f:
     samples = json.load(f)
 
 dataset = Dataset.from_list(samples)
+
+
+tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+tokenizer.pad_token = tokenizer.eos_token
+tokenizer.padding_side = "left"
+tokenizer.truncation_side = "left"
+
+# Si añadiste tokens especiales antes del SFT, vuelve a añadirlos
+# tokenizer.add_tokens(["<think>", "<|move|>", "<|end|>", ...])
+# model.resize_token_embeddings(len(tokenizer))
+
+# Tokeniza correctamente
+tokenized_dataset = preprocess_dpo_dataset(
+    dataset=Dataset.from_list(samples),
+    tokenizer=tokenizer,
+    max_length=1024,
+    max_prompt_length=512,
+    truncation_mode="keep_end"
+)
 
 # Configuración de entrenamiento
 training_args = DPOConfig(
@@ -42,8 +61,7 @@ training_args = DPOConfig(
 trainer = DPOTrainer(
     model=model,
     args=training_args,
-    train_dataset=dataset,
-    processing_class=tokenizer
+    train_dataset=tokenized_dataset
 )
 
 # Entrenamiento
