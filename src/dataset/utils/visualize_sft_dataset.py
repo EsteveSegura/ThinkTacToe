@@ -19,7 +19,15 @@ def parse_board(board_str: str) -> List[List[str]]:
     
     return board
 
-def visualize_board(board: List[List[str]], title: str = ""):
+def parse_move(move_str: str) -> tuple:
+    pattern = r'<\|(\d)-(\d)\|>'
+    match = re.search(pattern, move_str)
+    if match:
+        row, col = map(int, match.groups())
+        return row, col
+    return None
+
+def visualize_board(board: List[List[str]], title: str = "", move: str = None):
     fig, ax = plt.subplots(figsize=(6, 6))
     
     for i in range(4):
@@ -34,6 +42,13 @@ def visualize_board(board: List[List[str]], title: str = ""):
             elif board[i][j] == 'O':
                 circle = plt.Circle((j + 0.5, 2.5 - i), 0.3, fill=False, color='blue', linewidth=3)
                 ax.add_artist(circle)
+    
+    if move:
+        move_pos = parse_move(move)
+        if move_pos:
+            row, col = move_pos
+            ax.plot([col + 0.2, col + 0.8], [2.8 - row, 2.2 - row], 'y-', linewidth=3)
+            ax.plot([col + 0.2, col + 0.8], [2.2 - row, 2.8 - row], 'y-', linewidth=3)
     
     ax.set_xlim(-0.1, 3.1)
     ax.set_ylim(-0.1, 3.1)
@@ -53,7 +68,7 @@ def generate_visualization(dataset: List[Dict], num_samples: int, save_path: str
     for i, state in enumerate(random_states):
         board = parse_board(state['board'])
         title = f"Estado {i+1}\n{state['think']}\n{state['move']}"
-        visualize_board(board, title)
+        visualize_board(board, title, state['move'])
     
     plt.tight_layout()
     plt.savefig(save_path, bbox_inches='tight', dpi=300, format='jpg')
@@ -72,4 +87,4 @@ def visualize_random_states(dataset_path: str, num_samples: int = 5, num_visuali
         generate_visualization(dataset, num_samples, full_save_path)
 
 if __name__ == "__main__":
-    visualize_random_states("tictac_dataset.json", num_samples=5, num_visualizations=12) 
+    visualize_random_states("tictac_dataset.json", num_samples=5, num_visualizations=40) 

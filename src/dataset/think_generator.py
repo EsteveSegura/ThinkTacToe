@@ -1,5 +1,6 @@
 import random
 from typing import Tuple, List
+import re
 
 SPINNERS = {
     "win_verbs": [
@@ -53,6 +54,9 @@ SPINNERS = {
     "game_terms": [
         "board", "game", "match", "play", "move", "turn", "position",
         "strategy", "tactic", "approach", "plan", "course"
+    ],
+    "identity": [
+        "As X", "Playing as X", "I'm X in this match", "Being player X", "Since I play as X", "I am the X player"
     ]
 }
 
@@ -103,26 +107,40 @@ THINK_TEMPLATES = {
 
 def spin_text(template: str) -> str:
     """
-    Reemplaza los placeholders en el template con valores aleatorios de los spinners.
+    Reemplaza placeholders con spinners, soportando variantes como {verb}ing, ignorando {move}.
     """
-    result = template
-    for spinner_name, spinner_values in SPINNERS.items():
-        if spinner_name in result:
-            result = result.replace(f"{{{spinner_name}}}", random.choice(spinner_values))
-    return result
+    def replace(match):
+        key = match.group(1)
+        suffix = match.group(2) or ""
+
+        if key == "move":
+            return f"{{{key}}}{suffix}"  # lo dejamos sin tocar
+
+        word = random.choice(SPINNERS[key])
+        if suffix == "ing":
+            if word.endswith("e") and not word.endswith("ee"):
+                word = word[:-1]
+            word += "ing"
+        return word
+
+    return re.sub(r"{(\w+)}(ing)?", replace, template)
+
+
 
 def generate_think_text(kind: str, move: Tuple[int, int]) -> str:
     """
-    Genera texto de razonamiento con spinners para hacerlo más dinámico.
-    
-    Args:
-        kind: "win", "block", or "neutral"
-        move: Tuple (i, j) representing the move coordinates
+    Genera texto de razonamiento con spinners y, aleatoriamente,
+    agrega una frase que indica que se juega como 'X'.
     """
     template = random.choice(THINK_TEMPLATES[kind])
     move_str = f"{move[0]}-{move[1]}"
-    spun_text = spin_text(template)
-    return f"<think>{spun_text.format(move=move_str)}</think>"
+    spun_text = spin_text(template).format(move=move_str)
+
+    if random.random() < 0.5:  # 50% de las veces añade identidad
+        identity = random.choice(SPINNERS["identity"])
+        spun_text = f"{identity}, {spun_text[0].lower() + spun_text[1:]}"  # minúscula tras coma
+
+    return f"<think>{spun_text}</think>"
 
 if __name__ == "__main__":
     for kind in ["win", "block", "neutral"]:

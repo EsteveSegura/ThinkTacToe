@@ -1,7 +1,6 @@
 import re
 
 def parse_board(board_str):
-    """Convierte el string del board a una matriz 3x3."""
     board = [['' for _ in range(3)] for _ in range(3)]
     pattern = r"<\|(\d)-(\d)\|><\|(.*?)\|>"
     for row, col, val in re.findall(pattern, board_str):
@@ -9,7 +8,6 @@ def parse_board(board_str):
     return board
 
 def parse_move(move_str):
-    """Extrae la posición del movimiento."""
     match = re.search(r"<\|move\|><\|(\d)-(\d)\|>", move_str)
     return (int(match.group(1)), int(match.group(2))) if match else None
 
@@ -28,10 +26,9 @@ def render_board(board_str, move_str=None):
         print(row_str + "|")
         print("+---+---+---+")
 
-# Ejemplo de uso con tu entrada
 data = {
-"board": "<|0-0|><|blank|> <|0-1|><|X|> <|0-2|><|blank|>\n<|1-0|><|blank|> <|1-1|><|blank|> <|1-2|><|blank|>\n<|2-0|><|O|> <|2-1|><|blank|> <|2-2|><|blank|>",
-"move": "<|move|><|0-0|><|end|>"
+    "board": "<|0-0|><|O|> <|0-1|><|blank|> <|0-2|><|X|>\n<|1-0|><|blank|> <|1-1|><|X|> <|1-2|><|blank|>\n<|2-0|><|O|> <|2-1|><|blank|> <|2-2|><|blank|>",
+    "move": "<|move|><|1-0|><|end|>"
 }
 
 render_board(data["board"], data["move"])
