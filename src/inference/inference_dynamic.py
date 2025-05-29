@@ -20,20 +20,32 @@ from src.dataset.board_tokenizer import board_to_token_representation
 
 def create_random_board() -> list:
     """
-    Crea un tablero aleatorio con algunos movimientos ya realizados.
+    Crea un tablero aleatorio válido donde le toque jugar a 'X'.
+    Se asegura de que la cantidad de X y O sea coherente.
     """
     board = create_empty_board()
-    num_moves = random.randint(2, 6)  # Entre 2 y 6 movimientos iniciales
+    num_moves = random.randint(2, 6)
 
-    for _ in range(num_moves):
+    moves = []
+    first_player = random.choice(['X', 'O'])
+
+    for i in range(num_moves):
+        current_player = 'X' if (i % 2 == 0) == (first_player == 'X') else 'O'
         valid_moves = get_valid_moves(board)
         if not valid_moves:
             break
         move = random.choice(valid_moves)
-        player = next_player(board)
-        board = apply_move(board, player, move)
+        board = apply_move(board, current_player, move)
+        moves.append((current_player, move))
 
-    return board
+    # Verifica que le toque a 'X' ahora
+    x_count = sum(1 for row in board for cell in row if cell == 'X')
+    o_count = sum(1 for row in board for cell in row if cell == 'O')
+
+    if x_count == o_count:
+        return board  # Le toca a X
+    else:
+        return create_random_board()  # Reintenta si le toca a O
 
 def parse_model_move(model_output: str) -> tuple:
     """
@@ -87,7 +99,7 @@ def infer(prompt: str, max_new_tokens: int = 300):
     return output_text
 
 if __name__ == "__main__":
-    model_name = "-"  # <- Sustituye por tu ruta o ID real
+    model_name = "./qwen2.5-0.5b-tictactoe-sft/checkpoint-942"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True).to(device).eval()
