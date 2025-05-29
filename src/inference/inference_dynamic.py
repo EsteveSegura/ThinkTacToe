@@ -24,7 +24,7 @@ def create_random_board() -> list:
     """
     board = create_empty_board()
     num_moves = random.randint(2, 6)  # Entre 2 y 6 movimientos iniciales
-    
+
     for _ in range(num_moves):
         valid_moves = get_valid_moves(board)
         if not valid_moves:
@@ -32,7 +32,7 @@ def create_random_board() -> list:
         move = random.choice(valid_moves)
         player = next_player(board)
         board = apply_move(board, player, move)
-    
+
     return board
 
 def parse_model_move(model_output: str) -> tuple:
@@ -41,7 +41,6 @@ def parse_model_move(model_output: str) -> tuple:
     Ejemplo: <|move|><|2-2|><|end|> -> (2, 2)
     """
     try:
-        # Extraer la parte entre <| y |>
         move_part = model_output.split("<|move|><|")[1].split("|><|end|>")[0]
         row, col = map(int, move_part.split("-"))
         return (row, col)
@@ -54,13 +53,12 @@ def visualize_game_state(initial_board: list, model_move: tuple = None):
     """
     print("\nEstado inicial del tablero:")
     print_board(initial_board)
-    
+
     if model_move:
         row, col = model_move
         print(f"\nMovimiento del modelo: ({row}, {col})")
-        
-        # Aplicar el movimiento
-        final_board = apply_move(initial_board, 'Ô', model_move)
+
+        final_board = apply_move(initial_board, 'Ẍ', model_move)
         print("\nEstado final del tablero:")
         print_board(final_board)
 
@@ -89,34 +87,35 @@ def infer(prompt: str, max_new_tokens: int = 300):
     return output_text
 
 if __name__ == "__main__":
-    # Configuración del modelo
-    model_name = "-"
+    model_name = "-"  # <- Sustituye por tu ruta o ID real
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True).to(device).eval()
 
-    # Generar y procesar tableros aleatorios
-    num_games = 5  # Número de juegos a simular
-    
+    num_games = 5
+
     for game in range(num_games):
         print(f"\n{'='*50}")
         print(f"Juego {game + 1}/{num_games}")
         print(f"{'='*50}")
-        
-        # Crear tablero aleatorio
+
         board = create_random_board()
-        
-        # Convertir a formato de prompt
-        prompt = board_to_token_representation(board)
-        
-        # Obtener respuesta del modelo
+
+        # Prompt con estructura de entrenamiento
+        prompt = (
+            "<|board_start|>\n"
+            f"{board_to_token_representation(board)}\n"
+            "<|board_end|>\n"
+            "<|player|>X\n"
+            "<think>"
+        )
+
         model_output = infer(prompt)
         print("\nRespuesta del modelo:", model_output)
-        
-        # Extraer y visualizar el movimiento
+
         move = parse_model_move(model_output)
         if move:
             visualize_game_state(board, move)
         else:
             print("\nError al parsear el movimiento del modelo")
-            visualize_game_state(board) 
+            visualize_game_state(board)

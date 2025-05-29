@@ -25,7 +25,7 @@ def formatting_func(example):
     return example["text"]
 
 training_args = SFTConfig(
-    output_dir="./qwen2.5-0.5b-tictactoe",
+    output_dir="./qwen2.5-0.5b-tictactoe-sft",
     per_device_train_batch_size=32,
     num_train_epochs=1,
     learning_rate=2e-5,
