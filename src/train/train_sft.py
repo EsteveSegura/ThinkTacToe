@@ -19,7 +19,7 @@ model.resize_token_embeddings(len(tokenizer))
 
 model.gradient_checkpointing_enable()
 
-dataset = load_dataset("json", data_files="tictactoe_hf.json", split="train")
+dataset = load_dataset("json", data_files="tictactoe_dataset_sft.jsonl", split="train")
 
 def formatting_func(example):
     return example["text"]

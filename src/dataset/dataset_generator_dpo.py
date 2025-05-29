@@ -100,12 +100,12 @@ def generate_dpo_dataset(num_examples: int = 50000) -> List[Dict]:
             dataset.append(ex)
     return dataset
 
-def save_dpo_dataset(dataset: List[Dict], filename: str = "tictac_dpo_dataset.json"):
+def save_dpo_dataset(dataset: List[Dict], filename: str = "tictactoe_dataset_dpo.json"):
     import json
     with open(filename, "w") as f:
         json.dump(dataset, f, indent=2)
 
-def save_dpo_dataset_text(dataset: List[Dict], filename: str = "tictac_dpo_dataset.jsonl"):
+def save_dpo_dataset_text(dataset: List[Dict], filename: str = "tictactoe_dataset_dpo.jsonl"):
     import json
     with open(filename, "w") as f:
         for ex in dataset:

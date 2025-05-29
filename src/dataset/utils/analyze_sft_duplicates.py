@@ -53,4 +53,4 @@ def analyze_duplicates(dataset_path: str):
     print(f"Total de tableros duplicados: {len(duplicates)}")
     print(f"Total de estados en el dataset: {len(dataset)}")
 if __name__ == "__main__":
-    analyze_duplicates("tictac_dataset.json") 
+    analyze_duplicates("tictactoe_dataset_dpo.json") 

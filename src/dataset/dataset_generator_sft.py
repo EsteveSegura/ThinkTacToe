@@ -103,12 +103,12 @@ def generate_dataset(num_games: int = 5000) -> List[Dict]:
             break
     return dataset
 
-def save_dataset(dataset: List[Dict], filename: str = "tictac_dataset.json"):
+def save_dataset(dataset: List[Dict], filename: str = "tictactoe_dataset_sft.json"):
     import json
     with open(filename, 'w') as f:
         json.dump(dataset, f, indent=2)
 
-def save_dataset_text(dataset: List[Dict], filename: str = "tictactoe_hf.json"):
+def save_dataset_text(dataset: List[Dict], filename: str = "tictactoe_dataset_sft.jsonl"):
     """
     Guarda el dataset como JSONL en formato {"text": "..."} por línea,
     incluyendo delimitadores <|board_start|> y <|board_end|>.
