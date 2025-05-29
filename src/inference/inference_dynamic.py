@@ -14,19 +14,19 @@ from src.dataset.board_engine import (
     apply_move,
     print_board,
     get_valid_moves,
-    next_player
+    next_player,
+    check_winner
 )
 from src.dataset.board_tokenizer import board_to_token_representation
 
 def create_random_board() -> list:
     """
-    Crea un tablero aleatorio válido donde le toque jugar a 'X'.
-    Se asegura de que la cantidad de X y O sea coherente.
+    Crea un tablero aleatorio válido donde le toque jugar a 'X'
+    y aún no haya un ganador.
     """
     board = create_empty_board()
     num_moves = random.randint(2, 6)
 
-    moves = []
     first_player = random.choice(['X', 'O'])
 
     for i in range(num_moves):
@@ -36,16 +36,18 @@ def create_random_board() -> list:
             break
         move = random.choice(valid_moves)
         board = apply_move(board, current_player, move)
-        moves.append((current_player, move))
+
+        if check_winner(board):
+            return create_random_board()  # Reintenta si ya hay ganador
 
     # Verifica que le toque a 'X' ahora
     x_count = sum(1 for row in board for cell in row if cell == 'X')
     o_count = sum(1 for row in board for cell in row if cell == 'O')
 
     if x_count == o_count:
-        return board  # Le toca a X
+        return board
     else:
-        return create_random_board()  # Reintenta si le toca a O
+        return create_random_board()
 
 def parse_model_move(model_output: str) -> tuple:
     """
