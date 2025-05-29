@@ -10,6 +10,8 @@ from board_engine import (
 )
 from board_tokenizer import board_to_token_representation
 from think_generator import generate_think_text
+import json
+
 
 def select_best_neutral(valid_moves: List[Tuple[int, int]]) -> Tuple[int, int]:
     priorities = [
@@ -23,6 +25,7 @@ def select_best_neutral(valid_moves: List[Tuple[int, int]]) -> Tuple[int, int]:
             return random.choice(options)
     return random.choice(valid_moves)
 
+
 def select_worst_neutral(valid_moves: List[Tuple[int, int]]) -> Tuple[int, int]:
     priorities = [
         [(0, 1), (1, 0), (1, 2), (2, 1)],
@@ -35,9 +38,11 @@ def select_worst_neutral(valid_moves: List[Tuple[int, int]]) -> Tuple[int, int]:
             return random.choice(options)
     return random.choice(valid_moves)
 
+
 def generate_dpo_example() -> Optional[Dict]:
     board = create_empty_board()
     num_random_moves = random.randint(2, 6)
+
     for _ in range(num_random_moves):
         if check_winner(board) or is_draw(board):
             return None
@@ -79,18 +84,27 @@ def generate_dpo_example() -> Optional[Dict]:
 
     bad_move = select_worst_neutral(suboptimal_candidates)
 
-    return {
-        "board": board_to_token_representation(board),
-        "player": "X",
-        "ok": [{
-            "think": generate_think_text(move_type, optimal),
-            "move": f"<|move|><|{optimal[0]}-{optimal[1]}|><|end|>"
-        }],
-        "ko": [{
-            "think": generate_think_text("neutral", bad_move),
-            "move": f"<|move|><|{bad_move[0]}-{bad_move[1]}|><|end|>"
-        }]
-    }
+    prompt = (
+        "<|board_start|>\n"
+        + board_to_token_representation(board)
+        + "\n<|board_end|>\n"
+        + "<|player|>X\n"
+    )
+
+    chosen = (
+        generate_think_text(move_type, optimal)
+        + "\n"
+        + f"<|move|><|{optimal[0]}-{optimal[1]}|><|end|>"
+    )
+
+    rejected = (
+        generate_think_text("neutral", bad_move)
+        + "\n"
+        + f"<|move|><|{bad_move[0]}-{bad_move[1]}|><|end|>"
+    )
+
+    return {"prompt": prompt, "chosen": chosen, "rejected": rejected}
+
 
 def generate_dpo_dataset(num_examples: int = 50000) -> List[Dict]:
     dataset = []
@@ -100,26 +114,14 @@ def generate_dpo_dataset(num_examples: int = 50000) -> List[Dict]:
             dataset.append(ex)
     return dataset
 
-def save_dpo_dataset(dataset: List[Dict], filename: str = "tictactoe_dataset_dpo.json"):
-    import json
-    with open(filename, "w") as f:
-        json.dump(dataset, f, indent=2)
 
-def save_dpo_dataset_text(dataset: List[Dict], filename: str = "tictactoe_dataset_dpo.jsonl"):
-    import json
-    with open(filename, "w") as f:
+def save_dpo_dataset_jsonl(dataset: List[Dict], filename: str = "tictactoe_dpo.jsonl"):
+    with open(filename, "w", encoding="utf-8") as f:
         for ex in dataset:
-            text = (
-                "<|board_start|>\n" + ex["board"] + "\n<|board_end|>\n"
-                "<|player|>X\n"
-                + ex["ok"][0]["think"] + "\n" + ex["ok"][0]["move"] + "\n"
-                + "<|vs|>\n"
-                + ex["ko"][0]["think"] + "\n" + ex["ko"][0]["move"]
-            )
-            f.write(json.dumps({"text": text}, ensure_ascii=False) + "\n")
+            f.write(json.dumps(ex, ensure_ascii=False) + "\n")
+
 
 if __name__ == "__main__":
     dpo_dataset = generate_dpo_dataset(10000)
-    save_dpo_dataset(dpo_dataset)
-    save_dpo_dataset_text(dpo_dataset)
-    print("DPO dataset saved.")
+    save_dpo_dataset_jsonl(dpo_dataset)
+    print("✅ DPO dataset saved in JSONL format (prompt, chosen, rejected)")

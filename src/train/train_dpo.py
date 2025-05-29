@@ -1,4 +1,4 @@
-from datasets import Dataset
+from datasets import load_dataset
 from trl import DPOConfig, DPOTrainer
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import json
@@ -8,10 +8,7 @@ model = AutoModelForCausalLM.from_pretrained(path)
 tokenizer = AutoTokenizer.from_pretrained(path)
 
 
-with open('./tictactoe_dataset_dpo.jsonl', 'r') as f:
-    samples = json.load(f)
-
-train_dataset = Dataset.from_list(samples)
+train_dataset = load_dataset("json", data_files="tictactoe_dataset_sft.jsonl", split="train")
 
 training_args = DPOConfig(output_dir="Qwen2-0.5B-DPO-TicTacToe", logging_steps=10)
 trainer = DPOTrainer(model=model, args=training_args, processing_class=tokenizer, train_dataset=train_dataset)
