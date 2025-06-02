@@ -11,6 +11,10 @@ from board_engine import (
 )
 from board_tokenizer import board_to_token_representation
 from think_generator import generate_think_text
+from think_generator_llm import generate_think_llm
+
+# Flag to control whether to use LLM for thought generation
+LLM_THINK = True
 
 def select_best_neutral(valid_moves: List[Tuple[int, int]]) -> Tuple[int, int]:
     # Priorizamos centro, luego esquinas, luego laterales
@@ -30,6 +34,9 @@ def select_best_neutral(valid_moves: List[Tuple[int, int]]) -> Tuple[int, int]:
 def generate_complete_game() -> List[dict]:
     """
     Genera un estado de juego aleatorio válido, y guarda un único paso del jugador 'X'.
+    El tablero usa coordenadas donde:
+    - row: 0=top, 1=middle, 2=bottom
+    - col: 0=left, 1=center, 2=right
     """
     board = create_empty_board()
 
@@ -80,10 +87,16 @@ def generate_complete_game() -> List[dict]:
     if board[i][j] is not None:
         return []
 
+    # Generate thought using either LLM or original method
+    if LLM_THINK:
+        think = generate_think_llm(board, selected_move)
+    else:
+        think = generate_think_text(move_type, selected_move)
+
     state = {
         "board": board_to_token_representation(board),
         "player": "X",
-        "think": generate_think_text(move_type, selected_move),
+        "think": think,
         "move": f"<|move|><|{i}-{j}|><|end|>"
     }
 
@@ -94,6 +107,7 @@ def generate_dataset(num_games: int = 5000) -> List[Dict]:
     dataset = []
     attempts = 0
     while len(dataset) < num_games:
+        print(f"Generating game {len(dataset) + 1} of {num_games}")
         states = generate_complete_game()
         if states:
             dataset.extend(states)
@@ -134,7 +148,7 @@ def save_dataset_text(dataset: List[Dict], filename: str = "tictactoe_dataset_sf
             f.write(json.dumps({"text": text}, ensure_ascii=False) + "\n")
 
 if __name__ == "__main__":
-    dataset = generate_dataset(5000)
+    dataset = generate_dataset(1)
     print(f"Dataset generated with {len(dataset)} examples")
     save_dataset(dataset)
     save_dataset_text(dataset)
