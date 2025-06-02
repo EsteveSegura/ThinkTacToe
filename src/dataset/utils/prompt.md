@@ -41,6 +41,6 @@ Player `"X"` will now move to position {{POSITION}}, leaving the board in this s
 {{BOARD_WITH_MOVEMENT_APPLIED}}
 ```
 
-Write the thought that player `"X"` had to make this move. Express it in a concise way, with a text of around 100 words.
+Write the thought that player `"X"` had to make this move. Express it in a concise way, with a text of around 100 and 400 words.
 
 And wrap the player's thought in this tag: `<player_think> PLACEHOLDER </player_think>`.
