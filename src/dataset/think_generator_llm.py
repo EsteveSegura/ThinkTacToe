@@ -136,7 +136,7 @@ def generate_think_llm(board: List[List[str]], move: Tuple[int, int], max_retrie
             
             # Use the native client for streaming
             for chunk in client.generate(
-                model='gemma3:12b',
+                model='deepseek-r1:32b',
                 prompt=prompt_template,
                 stream=True,
                 options={

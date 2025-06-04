@@ -106,15 +106,30 @@ def generate_dataset(num_games: int = 5000) -> List[Dict]:
     print(f"Generating: {num_games} games...")
     dataset = []
     attempts = 0
+    save_interval = 5  # Guardar cada 100 ejemplos
+    
     while len(dataset) < num_games:
         print(f"Generating game {len(dataset) + 1} of {num_games}")
         states = generate_complete_game()
         if states:
             dataset.extend(states)
+            
+            # Guardar incrementalmente cada save_interval ejemplos
+            if len(dataset) % save_interval == 0:
+                print(f"\nGuardando progreso... ({len(dataset)} ejemplos)")
+                save_dataset(dataset, "tictactoe_dataset_sft_temp.json")
+                save_dataset_text(dataset, "tictactoe_dataset_sft_temp.jsonl")
+                
         attempts += 1
         if attempts > num_games * 5:
             print("Stopping early to avoid infinite loop.")
             break
+    
+    # Guardar el dataset final
+    print("\nGuardando dataset final...")
+    save_dataset(dataset)
+    save_dataset_text(dataset)
+    
     return dataset
 
 def save_dataset(dataset: List[Dict], filename: str = "tictactoe_dataset_sft.json"):
