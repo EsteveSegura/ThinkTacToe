@@ -12,6 +12,8 @@ from board_engine import (
 from board_tokenizer import board_to_token_representation
 from think_generator import generate_think_text
 from think_generator_llm import generate_think_llm
+import time
+from datetime import datetime
 
 # Flag to control whether to use LLM for thought generation
 LLM_THINK = False
@@ -106,15 +108,45 @@ def generate_complete_game() -> List[dict]:
 
     return [state]
 
+def save_temp_dataset(dataset: List[Dict], config_str: str):
+    """Guarda una copia temporal del dataset cada 5 minutos"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"temp_tictactoe_sft_{config_str}_{timestamp}.json"
+    
+    import json
+    with open(filename, 'w') as f:
+        json.dump(dataset, f, indent=2)
+    print(f"💾 Guardado temporal: {filename}")
+
 def generate_dataset(num_games: int = 5000) -> List[Dict]:
     print(f"Generating: {num_games} games...")
+    
+    # Configurar el nombre del archivo temporal
+    config = []
+    if NO_THINK:
+        config.append("nothink")
+    elif LLM_THINK:
+        config.append("llm")
+    else:
+        config.append("template")
+    config_str = "_".join(config)
+    
     dataset = []
     attempts = 0
+    last_save_time = time.time()
+    
     while len(dataset) < num_games:
         print(f"Generating game {len(dataset) + 1} of {num_games}")
         states = generate_complete_game()
         if states:
             dataset.extend(states)
+            
+            # Verificar si han pasado 5 minutos desde el último guardado
+            current_time = time.time()
+            if current_time - last_save_time >= 300:  # 300 segundos = 5 minutos
+                save_temp_dataset(dataset, config_str)
+                last_save_time = current_time
+                
         attempts += 1
         if attempts > num_games * 5:
             print("Stopping early to avoid infinite loop.")

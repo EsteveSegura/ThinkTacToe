@@ -12,6 +12,9 @@ from board_tokenizer import board_to_token_representation
 from think_generator import generate_think_text
 from think_generator_llm import generate_think_llm
 import json
+import time
+import threading
+from datetime import datetime
 
 # Flag to control whether to use LLM for thought generation
 LLM_THINK = False
@@ -122,18 +125,49 @@ def generate_dpo_example() -> Optional[Dict]:
     return {"prompt": prompt, "chosen": chosen, "rejected": rejected}
 
 
+def save_temp_dpo_dataset(dataset: List[Dict], config_str: str):
+    """Guarda una copia temporal del dataset cada 5 minutos"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"temp_tictactoe_dpo_{config_str}_{timestamp}.json"
+    
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(dataset, f, indent=2)
+    print(f"💾 Guardado temporal: {filename}")
+
+
 def generate_dpo_dataset(num_examples: int = 50000) -> List[Dict]:
     print(f"Generating DPO dataset with {num_examples} examples...")
     print(f"Using {'LLM' if LLM_THINK else 'template-based'} thought generation")
     if NO_THINK:
         print("Think generation is disabled")
+    
+    # Configurar el nombre del archivo temporal
+    config = []
+    if NO_THINK:
+        config.append("nothink")
+    elif LLM_THINK:
+        config.append("llm")
+    else:
+        config.append("template")
+    config_str = "_".join(config)
+    
     dataset = []
+    last_save_time = time.time()
+    
     while len(dataset) < num_examples:
         if len(dataset) % 100 == 0:
             print(f"Generated {len(dataset)} examples...")
+        
+        # Verificar si han pasado 5 minutos desde el último guardado
+        current_time = time.time()
+        if current_time - last_save_time >= 300:  # 300 segundos = 5 minutos
+            save_temp_dpo_dataset(dataset, config_str)
+            last_save_time = current_time
+            
         ex = generate_dpo_example()
         if ex:
             dataset.append(ex)
+    
     return dataset
 
 

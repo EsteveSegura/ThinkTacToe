@@ -3,6 +3,8 @@ import html
 from typing import List, Tuple
 import time
 from ollama import Client
+import threading
+import signal
 
 def get_position_name(row: int, col: int) -> str:
     """
@@ -62,7 +64,7 @@ def check_diagonal_threat(board: List[List[str]]) -> bool:
     
     return False
 
-def generate_think_llm(board: List[List[str]], move: Tuple[int, int], max_retries: int = 3) -> str:
+def generate_think_llm(board: List[List[str]], move: Tuple[int, int], max_retries: int = 3000) -> str:
     """
     Generates a thought for a Tic Tac Toe move using Ollama LLM.
     
@@ -134,39 +136,65 @@ def generate_think_llm(board: List[List[str]], move: Tuple[int, int], max_retrie
             print("\nStreaming response:")
             print("------------------")
             
-            # Use the native client for streaming
-            for chunk in client.generate(
-                model='gemma3:12b',
-                prompt=prompt_template,
-                stream=True,
-                options={
-                    "temperature": 0.7,
-                    "top_k": 20,
-                    "top_p": 0.85
-                }
-            ):
-                if 'response' in chunk:
-                    print(chunk['response'], end='', flush=True)
-                    full_response += chunk['response']
+            # Variable para controlar el timeout
+            timeout_occurred = False
             
-            print("\n------------------")
+            def timeout_handler():
+                nonlocal timeout_occurred
+                timeout_occurred = True
+                print("\nTimeout: La generación excedió el límite de 1.20 minutos")
             
-            # Get the response and decode HTML entities
-            decoded_response = html.unescape(full_response)
+            # Configurar el temporizador
+            timer = threading.Timer(72, timeout_handler)  # 1.20 minutos = 72 segundos
+            timer.start()
             
-            # Extract the thought between the tags
             try:
-                # Find the last occurrence of the tags
-                start_tag = decoded_response.rindex("<player_think>")
-                end_tag = decoded_response.rindex("</player_think>")
+                # Use the native client for streaming
+                for chunk in client.generate(
+                    model='gemma3:12b',
+                    prompt=prompt_template,
+                    stream=True,
+                    options={
+                        "temperature": 0.7,
+                        "top_k": 20,
+                        "top_p": 0.85
+                    }
+                ):
+                    if timeout_occurred:
+                        break
+                        
+                    if 'response' in chunk:
+                        print(chunk['response'], end='', flush=True)
+                        full_response += chunk['response']
                 
-                # Extract the content between the tags
-                thought = decoded_response[start_tag + len("<player_think>"):end_tag].strip()
-                print(thought)
-                print("--------------------------------")
-                return f"<player_think> {thought} </player_think>"
-            except ValueError:
-                raise Exception("Could not find player_think tags in the response")
+                # Cancelar el temporizador si la generación se completó antes del timeout
+                timer.cancel()
+                
+                if timeout_occurred:
+                    raise Exception("Timeout: La generación excedió el límite de 1.20 minutos")
+                
+                print("\n------------------")
+                
+                # Get the response and decode HTML entities
+                decoded_response = html.unescape(full_response)
+                
+                # Extract the thought between the tags
+                try:
+                    # Find the last occurrence of the tags
+                    start_tag = decoded_response.rindex("<player_think>")
+                    end_tag = decoded_response.rindex("</player_think>")
+                    
+                    # Extract the content between the tags
+                    thought = decoded_response[start_tag + len("<player_think>"):end_tag].strip()
+                    print(thought)
+                    print("--------------------------------")
+                    return f"<player_think> {thought} </player_think>"
+                except ValueError:
+                    raise Exception("Could not find player_think tags in the response")
+                    
+            finally:
+                # Asegurarse de que el temporizador se cancele
+                timer.cancel()
                 
         except Exception as e:
             if attempt == max_retries - 1:  # Last attempt
