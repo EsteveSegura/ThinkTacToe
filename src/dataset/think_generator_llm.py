@@ -164,7 +164,7 @@ def generate_think_llm(board: List[List[str]], move: Tuple[int, int], max_retrie
                 thought = decoded_response[start_tag + len("<player_think>"):end_tag].strip()
                 print(thought)
                 print("--------------------------------")
-                return thought
+                return f"<player_think> {thought} </player_think>"
             except ValueError:
                 raise Exception("Could not find player_think tags in the response")
                 

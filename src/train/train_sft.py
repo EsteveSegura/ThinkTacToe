@@ -1,50 +1,66 @@
 import os
+import argparse
 import torch
 from huggingface_hub import login
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from datasets import load_dataset
 from trl import SFTTrainer, SFTConfig
 
-# Login a Hugging Face
-login(token=os.environ["HF_TOKEN"])
+def parse_args():
+    parser = argparse.ArgumentParser(description='Train a model using SFT')
+    parser.add_argument('--model_name', type=str, required=True,
+                      help='Name or path of the base model to use')
+    parser.add_argument('--data_files', type=str, required=True,
+                      help='Path to the SFT dataset JSONL file')
+    parser.add_argument('--output_dir', type=str, required=True,
+                      help='Directory to save the trained model')
+    return parser.parse_args()
 
-# Modelo base
-model_name = "Qwen/Qwen2.5-0.5B"
-tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
+def main():
+    args = parse_args()
+    
+    # Login a Hugging Face
+    login(token=os.environ["HF_TOKEN"])
 
-if tokenizer.pad_token is None:
-    tokenizer.pad_token = tokenizer.eos_token
-model.resize_token_embeddings(len(tokenizer))
+    # Modelo base
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(args.model_name, trust_remote_code=True)
 
-model.gradient_checkpointing_enable()
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    model.resize_token_embeddings(len(tokenizer))
 
-dataset = load_dataset("json", data_files="tictactoe_dataset_sft.jsonl", split="train")
+    model.gradient_checkpointing_enable()
 
-def formatting_func(example):
-    return example["text"]
+    dataset = load_dataset("json", data_files=args.data_files, split="train")
 
-training_args = SFTConfig(
-    output_dir="./qwen2.5-0.5b-tictactoe-sft",
-    per_device_train_batch_size=32,
-    num_train_epochs=1,
-    learning_rate=2e-5,
-    logging_steps=10,
-    save_steps=250,
-    save_total_limit=1,
-    report_to="none",
-    fp16=True,
-    gradient_checkpointing=True,
-    max_seq_length=256,
-    eos_token="<|im_end|>",
-)
+    def formatting_func(example):
+        return example["text"]
 
-# Trainer
-trainer = SFTTrainer(
-    model=model,
-    args=training_args,
-    train_dataset=dataset,
-    formatting_func=formatting_func,
-)
+    training_args = SFTConfig(
+        output_dir=args.output_dir,
+        per_device_train_batch_size=32,
+        num_train_epochs=1,
+        learning_rate=2e-5,
+        logging_steps=10,
+        save_steps=250,
+        save_total_limit=1,
+        report_to="none",
+        fp16=True,
+        gradient_checkpointing=True,
+        max_seq_length=256,
+        eos_token="<|im_end|>",
+    )
 
-trainer.train()
+    # Trainer
+    trainer = SFTTrainer(
+        model=model,
+        args=training_args,
+        train_dataset=dataset,
+        formatting_func=formatting_func,
+    )
+
+    trainer.train()
+
+if __name__ == "__main__":
+    main()

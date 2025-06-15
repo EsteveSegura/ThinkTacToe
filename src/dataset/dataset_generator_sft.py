@@ -14,7 +14,9 @@ from think_generator import generate_think_text
 from think_generator_llm import generate_think_llm
 
 # Flag to control whether to use LLM for thought generation
-LLM_THINK = True
+LLM_THINK = False
+# Flag to skip think generation completely
+NO_THINK = False
 
 def select_best_neutral(valid_moves: List[Tuple[int, int]]) -> Tuple[int, int]:
     # Priorizamos centro, luego esquinas, luego laterales
@@ -88,7 +90,9 @@ def generate_complete_game() -> List[dict]:
         return []
 
     # Generate thought using either LLM or original method
-    if LLM_THINK:
+    if NO_THINK:
+        think = ""
+    elif LLM_THINK:
         think = generate_think_llm(board, selected_move)
     else:
         think = generate_think_text(move_type, selected_move)
@@ -117,18 +121,42 @@ def generate_dataset(num_games: int = 5000) -> List[Dict]:
             break
     return dataset
 
-def save_dataset(dataset: List[Dict], filename: str = "tictactoe_dataset_sft.json"):
+def save_dataset(dataset: List[Dict], filename: str = None):
+    if filename is None:
+        # Build filename based on configuration
+        config = []
+        if NO_THINK:
+            config.append("nothink")
+        elif LLM_THINK:
+            config.append("llm")
+        else:
+            config.append("template")
+        config_str = "_".join(config)
+        filename = f"tictactoe_sft_{config_str}.json"
+
     import json
     with open(filename, 'w') as f:
         json.dump(dataset, f, indent=2)
+    print(f"✅ SFT dataset saved as {filename}")
 
-def save_dataset_text(dataset: List[Dict], filename: str = "tictactoe_dataset_sft.jsonl"):
+def save_dataset_text(dataset: List[Dict], filename: str = None):
     """
     Guarda el dataset como JSONL en formato {"text": "..."} por línea,
     incluyendo delimitadores <|board_start|> y <|board_end|>.
     """
-    import json
+    if filename is None:
+        # Build filename based on configuration
+        config = []
+        if NO_THINK:
+            config.append("nothink")
+        elif LLM_THINK:
+            config.append("llm")
+        else:
+            config.append("template")
+        config_str = "_".join(config)
+        filename = f"tictactoe_sft_{config_str}.jsonl"
 
+    import json
     with open(filename, "w", encoding="utf-8") as f:
         for example in dataset:
             board = example["board"]
@@ -141,11 +169,15 @@ def save_dataset_text(dataset: List[Dict], filename: str = "tictactoe_dataset_sf
                 f"{board}\n"
                 "<|board_end|>\n"
                 f"<|player|>{player}\n"
-                f"{think}\n"
-                f"{move}"
             )
+            
+            if not NO_THINK:
+                text += f"{think}\n"
+            
+            text += f"{move}"
 
             f.write(json.dumps({"text": text}, ensure_ascii=False) + "\n")
+    print(f"✅ SFT dataset saved as {filename}")
 
 if __name__ == "__main__":
     dataset = generate_dataset(1)

@@ -121,7 +121,7 @@ if __name__ == "__main__":
             f"{board_to_token_representation(board)}\n"
             "<|board_end|>\n"
             "<|player|>X\n"
-            "<think>"
+            "<player_think>"
         )
 
         model_output = infer(prompt)

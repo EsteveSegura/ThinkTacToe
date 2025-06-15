@@ -10,8 +10,13 @@ from board_engine import (
 )
 from board_tokenizer import board_to_token_representation
 from think_generator import generate_think_text
+from think_generator_llm import generate_think_llm
 import json
 
+# Flag to control whether to use LLM for thought generation
+LLM_THINK = False
+# Flag to skip think generation completely
+NO_THINK = True
 
 def select_best_neutral(valid_moves: List[Tuple[int, int]]) -> Tuple[int, int]:
     priorities = [
@@ -91,15 +96,26 @@ def generate_dpo_example() -> Optional[Dict]:
         + "<|player|>X\n"
     )
 
+    # Generate thoughts using either LLM or original method
+    if NO_THINK:
+        chosen_think = ""
+        rejected_think = ""
+    elif LLM_THINK:
+        chosen_think = generate_think_llm(board, optimal)
+        rejected_think = generate_think_llm(board, bad_move)
+    else:
+        chosen_think = generate_think_text(move_type, optimal)
+        rejected_think = generate_think_text("neutral", bad_move)
+
     chosen = (
-        generate_think_text(move_type, optimal)
-        + "\n"
+        chosen_think
+        + ("\n" if chosen_think else "")
         + f"<|move|><|{optimal[0]}-{optimal[1]}|><|end|>"
     )
 
     rejected = (
-        generate_think_text("neutral", bad_move)
-        + "\n"
+        rejected_think
+        + ("\n" if rejected_think else "")
         + f"<|move|><|{bad_move[0]}-{bad_move[1]}|><|end|>"
     )
 
@@ -107,21 +123,58 @@ def generate_dpo_example() -> Optional[Dict]:
 
 
 def generate_dpo_dataset(num_examples: int = 50000) -> List[Dict]:
+    print(f"Generating DPO dataset with {num_examples} examples...")
+    print(f"Using {'LLM' if LLM_THINK else 'template-based'} thought generation")
+    if NO_THINK:
+        print("Think generation is disabled")
     dataset = []
     while len(dataset) < num_examples:
+        if len(dataset) % 100 == 0:
+            print(f"Generated {len(dataset)} examples...")
         ex = generate_dpo_example()
         if ex:
             dataset.append(ex)
     return dataset
 
 
-def save_dpo_dataset_jsonl(dataset: List[Dict], filename: str = "tictactoe_dpo.jsonl"):
+def save_dpo_dataset_json(dataset: List[Dict], filename: str = None):
+    if filename is None:
+        # Build filename based on configuration
+        config = []
+        if NO_THINK:
+            config.append("nothink")
+        elif LLM_THINK:
+            config.append("llm")
+        else:
+            config.append("template")
+        config_str = "_".join(config)
+        filename = f"tictactoe_dpo_{config_str}.json"
+
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(dataset, f, indent=2)
+    print(f"✅ DPO dataset saved as {filename}")
+
+
+def save_dpo_dataset_jsonl(dataset: List[Dict], filename: str = None):
+    if filename is None:
+        # Build filename based on configuration
+        config = []
+        if NO_THINK:
+            config.append("nothink")
+        elif LLM_THINK:
+            config.append("llm")
+        else:
+            config.append("template")
+        config_str = "_".join(config)
+        filename = f"tictactoe_dpo_{config_str}.jsonl"
+
     with open(filename, "w", encoding="utf-8") as f:
         for ex in dataset:
             f.write(json.dumps(ex, ensure_ascii=False) + "\n")
+    print(f"✅ DPO dataset saved as {filename}")
 
 
 if __name__ == "__main__":
-    dpo_dataset = generate_dpo_dataset(10000)
+    dpo_dataset = generate_dpo_dataset(2)
+    save_dpo_dataset_json(dpo_dataset)
     save_dpo_dataset_jsonl(dpo_dataset)
-    print("✅ DPO dataset saved in JSONL format (prompt, chosen, rejected)")

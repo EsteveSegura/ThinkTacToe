@@ -140,7 +140,7 @@ def generate_think_text(kind: str, move: Tuple[int, int]) -> str:
         identity = random.choice(SPINNERS["identity"])
         spun_text = f"{identity}, {spun_text[0].lower() + spun_text[1:]}"  # minúscula tras coma
 
-    return f"<think>{spun_text}</think>"
+    return f"<player_think>{spun_text}</player_think>"
 
 if __name__ == "__main__":
     for kind in ["win", "block", "neutral"]:

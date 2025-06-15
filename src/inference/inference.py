@@ -35,6 +35,6 @@ if __name__ == "__main__":
 <|2-0|><|blank|> <|2-1|><|blank|> <|2-2|><|blank|>
 <|board_end|>
 <|player|>X
-<think>
+<player_think>
 """
     infer(test_prompt)
