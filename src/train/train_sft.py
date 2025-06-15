@@ -40,7 +40,7 @@ def main():
     training_args = SFTConfig(
         output_dir=args.output_dir,
         per_device_train_batch_size=32,
-        num_train_epochs=1,
+        num_train_epochs=3,
         learning_rate=2e-5,
         logging_steps=10,
         save_steps=250,
