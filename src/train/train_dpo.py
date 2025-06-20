@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from datasets import load_dataset
 from trl import DPOConfig, DPOTrainer
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainerCallback
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a model using DPO')
@@ -18,10 +18,11 @@ def parse_args():
                       help='Directory to save training logs')
     return parser.parse_args()
 
-class LoggingCallback:
+class LoggingCallback(TrainerCallback):
     """Callback personalizado para guardar logs de entrenamiento"""
     
     def __init__(self, logs_dir, model_type="dpo"):
+        super().__init__()
         self.logs_dir = logs_dir
         self.model_type = model_type
         os.makedirs(logs_dir, exist_ok=True)

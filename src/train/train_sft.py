@@ -4,7 +4,7 @@ import torch
 import json
 from datetime import datetime
 from huggingface_hub import login
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, TrainerCallback
 from datasets import load_dataset
 from trl import SFTTrainer, SFTConfig
 
@@ -20,10 +20,11 @@ def parse_args():
                       help='Directory to save training logs')
     return parser.parse_args()
 
-class LoggingCallback:
+class LoggingCallback(TrainerCallback):
     """Callback personalizado para guardar logs de entrenamiento"""
     
     def __init__(self, logs_dir, model_type="sft"):
+        super().__init__()
         self.logs_dir = logs_dir
         self.model_type = model_type
         os.makedirs(logs_dir, exist_ok=True)
