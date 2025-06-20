@@ -21,7 +21,8 @@ The SFT training script (`train_sft.py`) is used for supervised fine-tuning of t
 python src/train/train_sft.py \
     --model_name "Qwen/Qwen2.5-0.5B" \
     --data_files "tictactoe_sft_llm.jsonl" \
-    --output_dir "qwen2.5-0.5b-tictactoe-sft"
+    --output_dir "qwen2.5-0.5b-tictactoe-sft" \
+    --logs_dir "./logs"
 ```
 
 ### Parameters
@@ -29,6 +30,7 @@ python src/train/train_sft.py \
 - `--model_name`: Name or path of the base model to use (e.g., "Qwen/Qwen2.5-0.5B")
 - `--data_files`: Path to the SFT dataset JSONL file
 - `--output_dir`: Directory to save the trained model
+- `--logs_dir`: Directory to save training logs (default: "./logs")
 
 ### Example
 
@@ -37,13 +39,15 @@ python src/train/train_sft.py \
 python src/train/train_sft.py \
     --model_name "Qwen/Qwen2.5-0.5B" \
     --data_files "tictactoe_sft_template.jsonl" \
-    --output_dir "qwen2.5-0.5b-tictactoe-sft-template"
+    --output_dir "qwen2.5-0.5b-tictactoe-sft-template" \
+    --logs_dir "./logs"
 
 # Train using LLM-generated thoughts
 python src/train/train_sft.py \
     --model_name "Qwen/Qwen2.5-0.5B" \
     --data_files "tictactoe_sft_llm.jsonl" \
-    --output_dir "qwen2.5-0.5b-tictactoe-sft-llm"
+    --output_dir "qwen2.5-0.5b-tictactoe-sft-llm" \
+    --logs_dir "./logs"
 ```
 
 ## DPO Training
@@ -56,7 +60,8 @@ The DPO training script (`train_dpo.py`) is used for direct preference optimizat
 python src/train/train_dpo.py \
     --path "qwen2.5-0.5b-tictactoe-sft/checkpoint-942" \
     --data_files "tictactoe_dpo_llm.jsonl" \
-    --output_dir "qwen2.5-0.5b-tictactoe-dpo"
+    --output_dir "qwen2.5-0.5b-tictactoe-dpo" \
+    --logs_dir "./logs"
 ```
 
 ### Parameters
@@ -64,6 +69,7 @@ python src/train/train_dpo.py \
 - `--path`: Path to the SFT checkpoint to use as base model
 - `--data_files`: Path to the DPO dataset JSONL file
 - `--output_dir`: Directory to save the trained model
+- `--logs_dir`: Directory to save training logs (default: "./logs")
 
 ### Example
 
@@ -72,13 +78,55 @@ python src/train/train_dpo.py \
 python src/train/train_dpo.py \
     --path "qwen2.5-0.5b-tictactoe-sft-template/checkpoint-942" \
     --data_files "tictactoe_dpo_template.jsonl" \
-    --output_dir "qwen2.5-0.5b-tictactoe-dpo-template"
+    --output_dir "qwen2.5-0.5b-tictactoe-dpo-template" \
+    --logs_dir "./logs"
 
 # Train using LLM-generated thoughts
 python src/train/train_dpo.py \
     --path "qwen2.5-0.5b-tictactoe-sft-llm/checkpoint-942" \
     --data_files "tictactoe_dpo_llm.jsonl" \
-    --output_dir "qwen2.5-0.5b-tictactoe-dpo-llm"
+    --output_dir "qwen2.5-0.5b-tictactoe-dpo-llm" \
+    --logs_dir "./logs"
+```
+
+## Training Logs
+
+Both training scripts now include automatic logging functionality that saves training progress to text files.
+
+### Log Files
+
+Training logs are automatically saved to the specified `--logs_dir` directory with the following naming convention:
+- SFT logs: `sft_training_logs_YYYYMMDD_HHMMSS.txt`
+- DPO logs: `dpo_training_logs_YYYYMMDD_HHMMSS.txt`
+
+### Log Content
+
+Each log file contains:
+- Training start timestamp
+- Step-by-step training metrics including:
+  - Loss values
+  - Gradient norms
+  - Learning rates
+  - Token accuracy
+  - Epoch progress
+  - Number of tokens processed
+
+### Example Log Output
+
+```
+=== SFT Training Logs ===
+Started at: 2024-01-15 14:30:25
+==================================================
+
+Step 10: {
+  "loss": 0.0612,
+  "grad_norm": 1.2164300680160522,
+  "learning_rate": 1.4814814814814815e-06,
+  "num_tokens": 733184.0,
+  "mean_token_accuracy": 0.972096461057663,
+  "epoch": 2.86
+}
+------------------------------
 ```
 
 ## Training Pipeline
@@ -97,15 +145,27 @@ Example pipeline:
 python src/dataset/dataset_generator_sft.py  # Generates tictactoe_sft_llm.jsonl
 python src/dataset/dataset_generator_dpo.py  # Generates tictactoe_dpo_llm.jsonl
 
-# 2. Train SFT
+# 2. Train SFT with logging
 python src/train/train_sft.py \
     --model_name "Qwen/Qwen2.5-0.5B" \
     --data_files "tictactoe_sft_llm.jsonl" \
-    --output_dir "qwen2.5-0.5b-tictactoe-sft-llm"
+    --output_dir "qwen2.5-0.5b-tictactoe-sft-llm" \
+    --logs_dir "./logs"
 
-# 3. Train DPO
+# 3. Train DPO with logging
 python src/train/train_dpo.py \
     --path "qwen2.5-0.5b-tictactoe-sft-llm/checkpoint-942" \
     --data_files "tictactoe_dpo_llm.jsonl" \
-    --output_dir "qwen2.5-0.5b-tictactoe-dpo-llm"
-``` 
+    --output_dir "qwen2.5-0.5b-tictactoe-dpo-llm" \
+    --logs_dir "./logs"
+```
+
+## Monitoring Training Progress
+
+During training, you can monitor progress in several ways:
+
+1. **Console output**: Real-time logs are printed to the console
+2. **Log files**: Detailed logs are saved to text files in the specified logs directory
+3. **Model checkpoints**: Models are saved at regular intervals in the output directory
+
+The logging system ensures that all training metrics are preserved for later analysis and debugging. 
