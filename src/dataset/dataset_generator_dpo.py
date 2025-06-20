@@ -19,7 +19,7 @@ from datetime import datetime
 # Flag to control whether to use LLM for thought generation
 LLM_THINK = False
 # Flag to skip think generation completely
-NO_THINK = True
+NO_THINK = False
 
 def select_best_neutral(valid_moves: List[Tuple[int, int]]) -> Tuple[int, int]:
     priorities = [
@@ -209,6 +209,6 @@ def save_dpo_dataset_jsonl(dataset: List[Dict], filename: str = None):
 
 
 if __name__ == "__main__":
-    dpo_dataset = generate_dpo_dataset(2)
+    dpo_dataset = generate_dpo_dataset(1000)
     save_dpo_dataset_json(dpo_dataset)
     save_dpo_dataset_jsonl(dpo_dataset)

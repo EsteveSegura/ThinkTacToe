@@ -212,7 +212,7 @@ def save_dataset_text(dataset: List[Dict], filename: str = None):
     print(f"✅ SFT dataset saved as {filename}")
 
 if __name__ == "__main__":
-    dataset = generate_dataset(1)
+    dataset = generate_dataset(2000)
     print(f"Dataset generated with {len(dataset)} examples")
     save_dataset(dataset)
     save_dataset_text(dataset)

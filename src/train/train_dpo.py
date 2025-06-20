@@ -32,6 +32,7 @@ def main():
         args=training_args,
         processing_class=tokenizer,
         train_dataset=train_dataset
+        num_train_epochs=3
     )
 
     trainer.train()
