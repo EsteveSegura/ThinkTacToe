@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import re
 
 # Añadir el directorio raíz del proyecto al path
 project_root = Path(__file__).parent.parent.parent
@@ -21,6 +22,72 @@ from src.dataset.board_engine import (
     check_winner
 )
 from src.dataset.board_tokenizer import board_to_token_representation
+
+# Configuración de modelos a probar
+MODELS_CONFIG = [
+    # Modelos 0.5B
+    {
+        'name': 'qwen2.5-0.5b-tictactoe-sft-llm',
+        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-sft-llm/checkpoint-189',
+        'has_think': True
+    },
+    {
+        'name': 'qwen2.5-0.5b-tictactoe-sft-nothink',
+        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-sft-nothink/checkpoint-189',
+        'has_think': False
+    },
+    {
+        'name': 'qwen2.5-0.5b-tictactoe-sft-template',
+        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-sft-template/checkpoint-189',
+        'has_think': True
+    },
+    {
+        'name': 'qwen2.5-0.5b-tictactoe-dpo-llm',
+        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-dpo-llm/checkpoint-375',
+        'has_think': True
+    },
+    {
+        'name': 'qwen2.5-0.5b-tictactoe-dpo-nothink',
+        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-dpo-nothink/checkpoint-375',
+        'has_think': False
+    },
+    {
+        'name': 'qwen2.5-0.5b-tictactoe-dpo-template',
+        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-dpo-template/checkpoint-375',
+        'has_think': True
+    },
+    # Modelos 1.5B
+    {
+        'name': 'qwen2.5-1.5b-tictactoe-sft-llm',
+        'path': '/home/ThinkTacToe/qwen2.5-1.5b-tictactoe-sft-llm/checkpoint-189',
+        'has_think': True
+    },
+    {
+        'name': 'qwen2.5-1.5b-tictactoe-sft-nothink',
+        'path': '/home/ThinkTacToe/qwen2.5-1.5b-tictactoe-sft-nothink/checkpoint-189',
+        'has_think': False
+    },
+    {
+        'name': 'qwen2.5-1.5b-tictactoe-sft-template',
+        'path': '/home/ThinkTacToe/qwen2.5-1.5b-tictactoe-sft-template/checkpoint-189',
+        'has_think': True
+    },
+    {
+        'name': 'qwen2.5-1.5b-tictactoe-dpo-llm',
+        'path': '/home/ThinkTacToe/qwen2.5-1.5b-tictactoe-dpo-llm/checkpoint-750',
+        'has_think': True
+    },
+    {
+        'name': 'qwen2.5-1.5b-tictactoe-dpo-nothink',
+        'path': '/home/ThinkTacToe/qwen2.5-1.5b-tictactoe-dpo-nothink/checkpoint-375',
+        'has_think': False
+    },
+    {
+        'name': 'qwen2.5-1.5b-tictactoe-dpo-template',
+        'path': '/home/ThinkTacToe/qwen2.5-1.5b-tictactoe-dpo-template/checkpoint-375',
+        'has_think': True
+    },
+]
 
 def create_random_board() -> list:
     """
@@ -42,15 +109,57 @@ def create_random_board() -> list:
 def parse_model_move(model_output: str) -> tuple:
     """
     Extrae las coordenadas del movimiento del modelo.
-    Ejemplo: <|move|><|2-2|><|end|> -> (2, 2)
+    Soporta formatos:
+      - <|move|><|2-2|><|end|>
+      - <|2-2|><|end|>
+      - 2-2|><|end|>
+      - 2-2<|end|>
     """
     try:
-        # Extraer la parte entre <| y |>
-        move_part = model_output.split("<|move|><|")[1].split("|><|end|>")[0]
-        row, col = map(int, move_part.split("-"))
-        return (row, col)
+        # Buscar patrón de coordenadas d-d en el texto
+        match = re.search(r"(\d)-(\d)", model_output)
+        if match:
+            row, col = int(match.group(1)), int(match.group(2))
+            return (row, col)
+        return None
     except:
         return None
+
+def get_optimal_moves(board: list) -> list:
+    """
+    Determina cuáles son los movimientos óptimos para el tablero actual.
+    Retorna una lista de tuplas con las coordenadas de los movimientos óptimos.
+    """
+    valid_moves = get_valid_moves(board)
+    if not valid_moves:
+        return []
+    
+    optimal_moves = []
+    
+    for move in valid_moves:
+        # Aplicar el movimiento
+        new_board = apply_move(board, 'X', move)
+        
+        # Verificar si es un movimiento ganador
+        if check_winner(new_board) == 'X':
+            optimal_moves.append(move)
+            continue
+        
+        # Verificar si bloquea un movimiento ganador del oponente
+        opponent_board = apply_move(board, 'O', move)
+        if check_winner(opponent_board) == 'O':
+            optimal_moves.append(move)
+            continue
+    
+    # Si no hay movimientos ganadores ni bloqueadores, considerar el centro como óptimo
+    if not optimal_moves and (1, 1) in valid_moves:
+        optimal_moves.append((1, 1))
+    
+    # Si no hay movimientos claramente óptimos, todos los movimientos válidos son considerados óptimos (neutros)
+    if not optimal_moves:
+        optimal_moves = valid_moves
+    
+    return optimal_moves
 
 def evaluate_move(board: list, move: tuple) -> dict:
     """
@@ -64,7 +173,8 @@ def evaluate_move(board: list, move: tuple) -> dict:
             'is_blocking': False,
             'is_center': False,
             'is_corner': False,
-            'is_edge': False
+            'is_edge': False,
+            'optimal_move': False
         }
     
     row, col = move
@@ -80,7 +190,8 @@ def evaluate_move(board: list, move: tuple) -> dict:
             'is_blocking': False,
             'is_center': False,
             'is_corner': False,
-            'is_edge': False
+            'is_edge': False,
+            'optimal_move': False
         }
     
     # Aplicar el movimiento
@@ -100,16 +211,21 @@ def evaluate_move(board: list, move: tuple) -> dict:
     is_corner = (row, col) in [(0, 0), (0, 2), (2, 0), (2, 2)]
     is_edge = not (is_center or is_corner)
     
+    # Verificar si es un movimiento óptimo
+    optimal_moves = get_optimal_moves(board)
+    optimal_move = move in optimal_moves
+    
     return {
         'is_valid': True,
         'is_winning': is_winning,
         'is_blocking': is_blocking,
         'is_center': is_center,
         'is_corner': is_corner,
-        'is_edge': is_edge
+        'is_edge': is_edge,
+        'optimal_move': optimal_move
     }
 
-def infer(prompt: str, max_new_tokens: int = 32):
+def infer(model, tokenizer, prompt: str, max_new_tokens: int = 3000):
     """
     Realiza la inferencia con el modelo y retorna el movimiento.
     """
@@ -143,28 +259,64 @@ def board_to_string(board: list) -> str:
     # Convertir cada elemento a string y manejar None
     return '\n'.join([''.join(str(cell) if cell is not None else ' ' for cell in row) for row in board])
 
-if __name__ == "__main__":
-    # Configuración del modelo
-    model_name = "-"
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True).to(device).eval()
+def create_prompt(board: list, has_think: bool) -> str:
+    """
+    Crea el prompt para el modelo según si tiene capacidad de pensar o no.
+    """
+    board_repr = board_to_token_representation(board)
+    
+    if has_think:
+        # Modelos con capacidad de pensar
+        return f"<|board_start|>\n{board_repr}\n<|board_end|>\n<|player|>X\n<player_think>"
+    else:
+        # Modelos sin capacidad de pensar (nothink)
+        return f"<|board_start|>\n{board_repr}\n<|board_end|>\n<|player|>X\n<|move|>\n"
 
-    # Generar y procesar tableros aleatorios
-    num_games = 5
+def test_model(model_config: dict, num_games: int = 10) -> pd.DataFrame:
+    """
+    Prueba un modelo específico y retorna los resultados.
+    """
+    model_name = model_config['name']
+    model_path = model_config['path']
+    has_think = model_config['has_think']
+    
+    print(f"\n{'='*60}")
+    print(f"Probando modelo: {model_name}")
+    print(f"Ruta: {model_path}")
+    print(f"Tiene capacidad de pensar: {has_think}")
+    print(f"{'='*60}")
+    
+    # Cargar modelo y tokenizer
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True).to(device).eval()
+        print(f"Modelo cargado exitosamente")
+    except Exception as e:
+        print(f"Error al cargar el modelo: {e}")
+        return pd.DataFrame()
+    
     results = []
     
     for game in range(num_games):
-        print(f"\nProcesando juego {game + 1}/{num_games}")
+        if (game + 1) % 20 == 0:
+            print(f"  Progreso: {game + 1}/{num_games}")
         
         # Crear tablero aleatorio
         board = create_random_board()
         
-        # Convertir a formato de prompt
-        prompt = board_to_token_representation(board)
+        # Crear prompt según el tipo de modelo
+        prompt = create_prompt(board, has_think)
         
         # Obtener respuesta del modelo
-        model_output = infer(prompt)
+        model_output = infer(model, tokenizer, prompt)
+        
+        # Mostrar prompt y respuesta en consola
+        print(f"\n--- Juego {game + 1} ---")
+        print(f"Prompt:")
+        print(prompt)
+        print(f"\nRespuesta del modelo:")
+        print(model_output)
+        print(f"--- Fin Juego {game + 1} ---\n")
         
         # Extraer el movimiento
         move = parse_model_move(model_output)
@@ -174,40 +326,84 @@ if __name__ == "__main__":
         
         # Guardar resultados
         result = {
+            'model_name': model_name,
+            'model_path': model_path,
+            'has_think': has_think,
             'game_id': game + 1,
             'initial_board': board_to_string(board),
+            'prompt': prompt,
             'model_output': model_output,
             'move': str(move) if move else 'None',
             **evaluation
         }
         results.append(result)
-        
-        # Mostrar progreso cada 50 juegos
-        if (game + 1) % 50 == 0:
-            print(f"Completados {game + 1} juegos")
     
-    # Crear DataFrame y guardar resultados
+    # Crear DataFrame
     df = pd.DataFrame(results)
+    
+    # Mostrar resumen del modelo
+    print(f"\nResumen para {model_name}:")
+    print(f"  Total de juegos: {len(df)}")
+    print(f"  Movimientos válidos: {df['is_valid'].sum()} ({df['is_valid'].mean()*100:.1f}%)")
+    print(f"  Movimientos ganadores: {df['is_winning'].sum()} ({df['is_winning'].mean()*100:.1f}%)")
+    print(f"  Movimientos bloqueadores: {df['is_blocking'].sum()} ({df['is_blocking'].mean()*100:.1f}%)")
+    print(f"  Movimientos óptimos: {df['optimal_move'].sum()} ({df['optimal_move'].mean()*100:.1f}%)")
+    
+    return df
+
+if __name__ == "__main__":
+    # Configuración
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Usando dispositivo: {device}")
     
     # Crear directorio de resultados si no existe
     results_dir = Path('results')
     results_dir.mkdir(exist_ok=True)
     
-    # Generar nombre de archivo con timestamp
+    # Generar timestamp para los archivos
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    output_file = results_dir / f'model_evaluation_{timestamp}.csv'
     
-    # Guardar resultados
-    df.to_csv(output_file, index=False)
+    # Probar todos los modelos
+    all_results = []
     
-    # Mostrar resumen
-    print("\nResumen de la evaluación:")
-    print(f"Total de juegos: {len(df)}")
-    print(f"Movimientos válidos: {df['is_valid'].sum()} ({df['is_valid'].mean()*100:.1f}%)")
-    print(f"Movimientos ganadores: {df['is_winning'].sum()} ({df['is_winning'].mean()*100:.1f}%)")
-    print(f"Movimientos bloqueadores: {df['is_blocking'].sum()} ({df['is_blocking'].mean()*100:.1f}%)")
-    print(f"\nDistribución de posiciones:")
-    print(f"Centro: {df['is_center'].sum()} ({df['is_center'].mean()*100:.1f}%)")
-    print(f"Esquinas: {df['is_corner'].sum()} ({df['is_corner'].mean()*100:.1f}%)")
-    print(f"Bordes: {df['is_edge'].sum()} ({df['is_edge'].mean()*100:.1f}%)")
-    print(f"\nResultados guardados en: {output_file}") 
+    for model_config in MODELS_CONFIG:
+        try:
+            df = test_model(model_config, num_games=100)
+            if not df.empty:
+                all_results.append(df)
+                
+                # Guardar resultados individuales del modelo
+                model_name_clean = model_config['name'].replace('/', '_').replace('-', '_')
+                individual_file = results_dir / f'{model_name_clean}_evaluation_{timestamp}.csv'
+                df.to_csv(individual_file, index=False)
+                print(f"Resultados guardados en: {individual_file}")
+                
+        except Exception as e:
+            print(f"Error al probar modelo {model_config['name']}: {e}")
+            continue
+    
+    # Combinar todos los resultados
+    if all_results:
+        combined_df = pd.concat(all_results, ignore_index=True)
+        
+        # Guardar resultados combinados
+        combined_file = results_dir / f'all_models_evaluation_{timestamp}.csv'
+        combined_df.to_csv(combined_file, index=False)
+        
+        # Mostrar resumen general
+        print(f"\n{'='*80}")
+        print("RESUMEN GENERAL DE TODOS LOS MODELOS")
+        print(f"{'='*80}")
+        
+        for model_name in combined_df['model_name'].unique():
+            model_data = combined_df[combined_df['model_name'] == model_name]
+            print(f"\n{model_name}:")
+            print(f"  Juegos: {len(model_data)}")
+            print(f"  Válidos: {model_data['is_valid'].mean()*100:.1f}%")
+            print(f"  Ganadores: {model_data['is_winning'].mean()*100:.1f}%")
+            print(f"  Bloqueadores: {model_data['is_blocking'].mean()*100:.1f}%")
+            print(f"  Óptimos: {model_data['optimal_move'].mean()*100:.1f}%")
+        
+        print(f"\nResultados combinados guardados en: {combined_file}")
+    else:
+        print("No se pudieron procesar resultados de ningún modelo.") 

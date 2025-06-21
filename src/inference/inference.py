@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
-model_name = "-"
+model_name = "/Users/usuario/ThinkTacToe/qwen2.5-1.5b-tictactoe-sft-llm/checkpoint-189"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
@@ -30,9 +30,9 @@ def infer(prompt: str, max_new_tokens: int = 300):
 
 if __name__ == "__main__":
     test_prompt = """<|board_start|>
-<|0-0|><|X|> <|0-1|><|O|> <|0-2|><|blank|>
-<|1-0|><|blank|> <|1-1|><|X|> <|1-2|><|O|>
-<|2-0|><|blank|> <|2-1|><|blank|> <|2-2|><|blank|>
+<|0-0|><|blank|> <|0-1|><|blank|> <|0-2|><|X|>
+<|1-0|><|O|> <|1-1|><|blank|> <|1-2|><|blank|>
+<|2-0|><|blank|> <|2-1|><|X|> <|2-2|><|blank|>
 <|board_end|>
 <|player|>X
 <player_think>
