@@ -61,7 +61,8 @@ def main():
 
     training_args = DPOConfig(
         output_dir=args.output_dir,
-        logging_steps=10
+        logging_steps=10,
+        num_train_epochs=3
     )
 
     trainer = DPOTrainer(
@@ -69,7 +70,6 @@ def main():
         args=training_args,
         processing_class=tokenizer,
         train_dataset=train_dataset,
-        num_train_epochs=3,
         callbacks=[logging_callback]
     )
 
