@@ -177,7 +177,6 @@ def main():
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name, 
         trust_remote_code=True,
-        attn_implementation="flash_attention_2"  # Flash attention para H100
     )
     
     # Aplicar bf16 de forma segura
