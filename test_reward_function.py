@@ -1,15 +1,14 @@
-# train_grpo_simple.py
-from datasets import load_dataset
-from trl import GRPOConfig, GRPOTrainer
-import json
-import os
+#!/usr/bin/env python3
+"""
+Script de prueba para verificar la función de recompensa GRPO
+"""
+
 import sys
 import re
-from datetime import datetime
+from pathlib import Path
 
 # Añadir el directorio raíz del proyecto al path
-from pathlib import Path
-project_root = Path(__file__).parent.parent.parent
+project_root = Path(__file__).parent
 sys.path.append(str(project_root))
 
 from src.dataset.board_engine import (
@@ -21,43 +20,12 @@ from src.dataset.board_engine import (
     is_draw
 )
 
-# Configurar logging simple
-timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-log_file = f"logs/grpo_training_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-
-# Crear directorio logs si no existe
-os.makedirs("logs", exist_ok=True)
-
-# Clase para capturar la salida y guardarla en archivo
-class Logger:
-    def __init__(self, filename):
-        self.terminal = sys.stdout
-        self.log = open(filename, 'w')
-    
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message)
-        self.log.flush()
-    
-    def flush(self):
-        self.terminal.flush()
-        self.log.flush()
-
-# Redirigir stdout al archivo
-sys.stdout = Logger(log_file)
-
-print(f"=== GRPO Training Logs ===")
-print(f"Started at: {timestamp}")
-print("=" * 50)
-print()
-
-# Cargar dataset local
-dataset = load_dataset("json", data_files="./datasets/tictactoe_grpo_llm.jsonl", split="train")
-
 def contains_bad_token(text):
     """Verifica si el texto contiene tokens problemáticos o fuera de contexto"""
     bad_patterns = [
         r"<\|endoftext\|>",
+        r"<\|im_start\|>",
+        r"<\|im_end\|>",
         r"<\|system\|>",
         r"<\|user\|>",
         r"<\|assistant\|>",
@@ -249,30 +217,50 @@ def reward_func(completions, prompts=None, **kwargs):
     
     return rewards
 
-# Configuración para entrenamiento estable en H100
-training_args = GRPOConfig(
-    output_dir="qwen2.5-0.5b-tictactoe-grpo",
-    num_train_epochs=1,
-    per_device_train_batch_size=16,
-    gradient_accumulation_steps=1,
-    learning_rate=1e-5,
-    bf16=True,
-    gradient_checkpointing=True,
-    save_steps=200,
-    save_total_limit=1,
-    logging_steps=50,
-    warmup_steps=10,
-    max_completion_length=256,  # Aumentado para permitir pensamientos más largos
-    temperature=0.7,  # Añadido para controlar la creatividad
-    top_p=0.9,  # Añadido para diversidad
-    repetition_penalty=1.1,  # Añadido para evitar repeticiones
-)
+def test_examples():
+    """Prueba la función de recompensa con ejemplos del dataset"""
+    
+    # Ejemplos del dataset
+    test_cases = [
+        {
+            "prompt": "<|board_start|>\n<|0-0|><|blank|> <|0-1|><|O|> <|0-2|><|X|>\n<|1-0|><|X|> <|1-1|><|blank|> <|1-2|><|blank|>\n<|2-0|><|blank|> <|2-1|><|blank|> <|2-2|><|O|>\n<|board_end|>\n<|player|>X",
+            "completion": "<player_think>By placing an \"X\" at the center (1,1), I aim to control a pivotal position that influences multiple potential winning lines—rows, columns, and diagonals. This strategic move not only strengthens my own possibilities for creating two separate threats in subsequent turns but also disrupts any potential diagonal or line formations that Player O might be planning. The center is crucial as it allows me to potentially set up future moves where I can force a win by creating multiple threats that Player O cannot block all at once. Additionally, occupying the center limits Player O's ability to expand their influence across the board effectively. This move positions me advantageously for the next steps in the game. </player_think>\n<|move|><|1-1|><|end|>"
+        },
+        {
+            "prompt": "<|board_start|>\n<|0-0|><|blank|> <|0-1|><|O|> <|0-2|><|X|>\n<|1-0|><|O|> <|1-1|><|X|> <|1-2|><|O|>\n<|2-0|><|blank|> <|2-1|><|blank|> <|2-2|><|X|>\n<|board_end|>\n<|player|>X",
+            "completion": "<player_think>I need to make a strategic move. Looking at the board, placing my 'X' in the top-left corner (0,0) will complete the diagonal from (0,0) to (2,2), giving me three in a row and securing an immediate win. Additionally, this move blocks any potential threats Player O might have on that diagonal. It's a strong position as it not only ensures victory but also consolidates control over the board's key areas. </player_think>\n<|move|><|0-0|><|end|>"
+        },
+        {
+            "prompt": "<|board_start|>\n<|0-0|><|O|> <|0-1|><|blank|> <|0-2|><|X|>\n<|1-0|><|X|> <|1-1|><|blank|> <|1-2|><|X|>\n<|2-0|><|blank|> <|2-1|><|O|> <|2-2|><|O|>\n<|board_end|>\n<|player|>X",
+            "completion": "<player_think>I need to analyze the current board state and determine the best move as player \"X\". The goal is to either win the game or prevent the opponent from winning while setting up potential winning opportunities.\n\nThe current board state is:\n\n[\n  [\"O\", \"\", \"X\"],\n  [\"X\", \"\", \"X\"],\n  [\"\", \"O\", \"O\"]\n]\n\nLooking at this, I can see that my pieces (\"X\") are positioned in such a way that completing a row or column could lead to an immediate win. Specifically, if I place an \"X\" in the center position (1,1), it will complete the middle row as all three positions in the middle row will be occupied by \"X\". This would result in an immediate victory for me.\n\nAdditionally, placing an \"X\" in the center is a strategic move because the center is part of multiple potential winning lines: the middle row, the middle column, and both diagonals. By controlling the center, I not only secure this immediate win but also set myself up for future opportunities if the game were to continue.\n\nI should also consider whether the opponent has any potential threats that could result in an immediate win after my move. However, based on the current board state, it appears that the opponent does not have a clear path to completing a row, column, or diagonal in their next move. This makes it safe for me to proceed with the winning move without risking losing the game.\n\nTherefore, moving to position (1,1) is the optimal choice as it secures an immediate win while also maintaining control over key positions on the board. </player_think>\n<|move|><|1-1|><|end|>"
+        }
+    ]
+    
+    print("=== PRUEBA DE FUNCIÓN DE RECOMPENSA GRPO ===\n")
+    
+    for i, test_case in enumerate(test_cases, 1):
+        print(f"Ejemplo {i}:")
+        print(f"Prompt: {test_case['prompt'][:100]}...")
+        print(f"Completion: {test_case['completion'][:100]}...")
+        
+        # Calcular recompensa
+        reward = reward_func([test_case['completion']], [test_case['prompt']])[0]
+        
+        # Análisis detallado
+        print(f"Recompensa total: {reward:.3f}")
+        
+        # Desglose
+        move = extract_move(test_case['completion'])
+        board = extract_board_from_prompt(test_case['prompt'])
+        move_quality = evaluate_move_quality(board, move)
+        thinking_quality = evaluate_thinking_quality(test_case['completion'])
+        
+        print(f"  - Calidad del movimiento: {move_quality:.3f}")
+        print(f"  - Calidad del pensamiento: {thinking_quality:.3f}")
+        print(f"  - Bonus de formato: 0.100")
+        print(f"  - Movimiento extraído: {move}")
+        
+        print("-" * 50)
 
-trainer = GRPOTrainer(
-    model="GiRLaZo/qwen2.5-0.5b-tictactoe-sft-llm",
-    reward_funcs=reward_func,
-    args=training_args,
-    train_dataset=dataset,
-)
-
-trainer.train()
+if __name__ == "__main__":
+    test_examples() 
