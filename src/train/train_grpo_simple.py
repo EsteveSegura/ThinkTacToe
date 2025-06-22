@@ -137,34 +137,38 @@ def reward_func(completions, prompts=None, **kwargs):
     for i, completion in enumerate(completions):
         prompt = prompts[i] if prompts else ""
         
-        # REGLA 1: Verificar que contenga </player_think>
-        if "</player_think>" not in completion:
-            rewards.append(-2.0)  # Penalización fuerte por falta de </player_think>
-            continue
-        
-        # REGLA 2: Verificar formato del movimiento final
-        move_pattern = r'<\|move\|><\|(\d)-(\d)\|><\|end\|>$'
-        if not re.search(move_pattern, completion.strip()):
-            rewards.append(-1.5)  # Penalización por formato incorrecto
-            continue
-        
         # Extraer el movimiento del texto generado
         move = extract_move(completion)
         
+        # Evaluar formato y contenido
+        format_score = 0.0
+        
+        # BONUS por tener </player_think> (no penalizar si no está)
+        if "</player_think>" in completion:
+            format_score += 0.3
+        
+        # BONUS por formato correcto del movimiento
+        move_pattern = r'<\|move\|><\|(\d)-(\d)\|><\|end\|>$'
+        if re.search(move_pattern, completion.strip()):
+            format_score += 0.2
+        
+        # BONUS por no tener repeticiones excesivas
+        if completion.count("</player_think>") <= 1:
+            format_score += 0.2
+        
         if not move:
-            rewards.append(-1.0)  # Penalizar si no se puede extraer el movimiento
+            # Penalización suave si no hay movimiento válido
+            rewards.append(-0.5 + format_score)
             continue
         
         # Extraer el tablero del prompt
         board = extract_board_from_prompt(prompt)
         
         # Evaluar la calidad del movimiento
-        base_reward = evaluate_move_quality(board, move)
+        move_quality = evaluate_move_quality(board, move)
         
-        # BONUS: Recompensa adicional por formato perfecto
-        format_bonus = 0.1 if re.search(move_pattern, completion.strip()) else 0.0
-        
-        final_reward = base_reward + format_bonus
+        # Combinar calidad del movimiento con formato
+        final_reward = move_quality + format_score
         rewards.append(final_reward)
     
     return rewards
