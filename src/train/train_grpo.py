@@ -172,15 +172,31 @@ def main():
     # Login a Hugging Face
     login(token=os.environ["HF_TOKEN"])
 
-    # Modelo base
+    # Modelo base con optimizaciones para H100
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(args.model_name, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(
+        args.model_name, 
+        trust_remote_code=True,
+        attn_implementation="flash_attention_2"  # Flash attention para H100
+    )
+    
+    # Aplicar bf16 de forma segura
+    if torch.cuda.is_available():
+        model = model.to(dtype=torch.bfloat16)
 
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     model.resize_token_embeddings(len(tokenizer))
 
+    # Optimizaciones de memoria y rendimiento
     model.gradient_checkpointing_enable()
+    
+    # Torch compile para acelerar ejecución (PyTorch 2.0+)
+    try:
+        model = torch.compile(model)
+        print("✅ Torch compile activado")
+    except Exception as e:
+        print(f"⚠️ Torch compile no disponible: {e}")
 
     # Cargar dataset
     dataset = load_dataset("json", data_files=args.data_files, split="train")
@@ -188,32 +204,44 @@ def main():
     # Crear callback para logging
     logging_callback = LoggingCallback(args.logs_dir, "grpo")
 
-    # Configuración GRPO
+    # Configuración GRPO optimizada para H100
     config = GRPOConfig(
         output_dir=args.output_dir,
-        per_device_train_batch_size=2,
+        per_device_train_batch_size=8,  # Aumentado para H100
+        gradient_accumulation_steps=4,  # Simular batch grande
         num_train_epochs=3,
-        logging_steps=10,
+        logging_steps=50,  # Reducido para menos overhead
         learning_rate=5e-6,
         optim="adamw_torch",
         num_generations=4,
-        use_liger_loss=True,
+        use_liger_loss=True,  # Usar liger loss para estabilidad
         beta=0.1,
         remove_unused_columns=False,
         save_steps=250,
         save_total_limit=1,
         report_to="none",
-        fp16=True,
+        bf16=True,  # bf16 nativo en H100 (más estable que fp16)
+        fp16=False,  # Desactivar fp16 cuando usamos bf16
         gradient_checkpointing=True,
         max_prompt_length=256,
         max_completion_length=256,
         temperature=1.0,
         top_p=1.0,
         repetition_penalty=1.0,
-        scale_rewards=False,
-        log_completions=True
+        scale_rewards=True,
+        mask_truncated_completions=False,
+        log_completions=True,  # Habilitado para debugging
+        dataloader_num_workers=4,  # Paralelizar carga de datos
+        dataloader_pin_memory=True,  # Acelerar transferencia CPU->GPU
+        dataloader_prefetch_factor=2,  # Prefetch para NVMe
+        max_grad_norm=1.0,  # Clipping de gradientes
+        warmup_ratio=0.1,  # Warmup para estabilidad
+        lr_scheduler_type="cosine",  # Scheduler más estable
+        weight_decay=0.01,  # Regularización
+        adam_beta1=0.9,
+        adam_beta2=0.999,
+        adam_epsilon=1e-8
     )
-
 
     # Trainer GRPO
     trainer = GRPOTrainer(
