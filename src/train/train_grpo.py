@@ -208,12 +208,12 @@ def main():
         output_dir=args.output_dir,
         per_device_train_batch_size=8,  # Aumentado para H100
         gradient_accumulation_steps=4,  # Simular batch grande
-        num_train_epochs=3,
+        num_train_epochs=0.5,
         logging_steps=50,  # Reducido para menos overhead
         learning_rate=5e-6,
         optim="adamw_torch",
         num_generations=4,
-        use_liger_loss=True,  # Usar liger loss para estabilidad
+        use_liger_loss=False,  # Usar liger loss para estabilidad
         beta=0.1,
         remove_unused_columns=False,
         save_steps=250,
@@ -223,10 +223,10 @@ def main():
         gradient_checkpointing=True,
         max_prompt_length=256,
         max_completion_length=256,
-        temperature=1.0,
-        top_p=1.0,
-        repetition_penalty=1.0,
-        scale_rewards=True,
+        temperature=0.7,
+        top_p=0.9,
+        repetition_penalty=1.1,
+        scale_rewards=False,
         mask_truncated_completions=False,
         log_completions=True,  # Habilitado para debugging
         dataloader_num_workers=4,  # Paralelizar carga de datos
@@ -251,6 +251,10 @@ def main():
     )
 
     trainer.train()
+    
+    # Guardar tokenizer al final junto con el modelo
+    tokenizer.save_pretrained(args.output_dir + "/checkpoint-last")
+    print(f"✅ Tokenizer guardado en: {args.output_dir}/checkpoint-last")
 
 if __name__ == "__main__":
     main()
