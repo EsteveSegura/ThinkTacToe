@@ -56,13 +56,12 @@ def reward_think_length(completions, **kwargs):
         rewards.append(reward)
     return rewards
 
-# Configuración para entrenamiento rápido en H100
+# Configuración para entrenamiento completo en H100
 training_args = GRPOConfig(
     output_dir="qwen2.5-0.5b-tictactoe-grpo",
     num_train_epochs=3,
     per_device_train_batch_size=2,  # Batch pequeño para prueba rápida
     gradient_accumulation_steps=4,  # Acumular gradientes
-    max_steps=100,  # Solo 100 pasos para prueba rápida
     learning_rate=1e-5,
     bf16=True,  # Usar bfloat16 para H100
     gradient_checkpointing=True,  # Ahorrar memoria
