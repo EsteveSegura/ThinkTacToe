@@ -20,4 +20,4 @@
 - [x] Train Template DPO 1.5
 
 - [x] Train LLM SFT 1.5
-- [] Train LLM DPO 1.5
+- [x] Train LLM DPO 1.5
