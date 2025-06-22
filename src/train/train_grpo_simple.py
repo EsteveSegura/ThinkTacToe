@@ -273,6 +273,11 @@ training_args = GRPOConfig(
     temperature=0.7,  # Añadido para controlar la creatividad
     top_p=0.9,  # Añadido para diversidad
     repetition_penalty=1.1,  # Añadido para evitar repeticiones
+    num_generations=4,  # Número de generaciones por prompt
+    max_prompt_length=512,  # Longitud máxima del prompt
+    remove_unused_columns=False,  # Importante para GRPO
+    dataloader_num_workers=0,  # Evitar problemas de multiprocessing
+    dataloader_pin_memory=False,  # Evitar problemas de memoria
 )
 
 trainer = GRPOTrainer(
@@ -280,6 +285,7 @@ trainer = GRPOTrainer(
     reward_funcs=reward_func,
     args=training_args,
     train_dataset=dataset,
+    tokenizer=None,  # Usar el tokenizer del modelo
 )
 
 trainer.train()
