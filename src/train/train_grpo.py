@@ -191,12 +191,12 @@ def main():
     # Configuración GRPO
     config = GRPOConfig(
         output_dir=args.output_dir,
-        per_device_train_batch_size=2,
+        per_device_train_batch_size=4,
         num_train_epochs=3,
         logging_steps=10,
         learning_rate=5e-6,
         optim="adamw_torch",
-        num_generation=4,
+        num_generations=4,
         use_liger_loss=True,
         beta=0.0,
         remove_unused_columns=False,
@@ -205,8 +205,15 @@ def main():
         report_to="none",
         fp16=True,
         gradient_checkpointing=True,
-        max_seq_length=256,
-        eos_token="<|im_end|>",
+        max_prompt_length=256,
+        max_completion_length=256,
+        temperature=1.0,
+        top_p=1.0,
+        repetition_penalty=1.0,
+        scale_rewards=True,
+        loss_type="bnpo",
+        mask_truncated_completions=False,
+        log_completions=False
     )
 
     # Trainer GRPO
