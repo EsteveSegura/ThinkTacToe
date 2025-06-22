@@ -221,7 +221,6 @@ def main():
         save_total_limit=1,
         report_to="none",
         bf16=True,  # bf16 nativo en H100 (más estable que fp16)
-        fp16=False,  # Desactivar fp16 cuando usamos bf16
         gradient_checkpointing=True,
         max_prompt_length=256,
         max_completion_length=256,
