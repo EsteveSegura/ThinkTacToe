@@ -205,31 +205,35 @@ def reward_func(completions, prompts=None, **kwargs):
     
     for i, completion in enumerate(completions):
         prompt = prompts[i] if prompts else ""
+        reward = 0.0  # Recompensa base
         
         # PENALIZACIÓN FUERTE por texto fuera de contexto
         if contains_bad_token(completion):
-            rewards.append(-2.0)
+            reward = -2.0
+            rewards.append(reward)
             continue
         
         # Verificar formato básico
         think_count = completion.count("</player_think>")
         if think_count == 0:
-            rewards.append(-1.0)  # Falta pensamiento
+            reward = -1.0  # Falta pensamiento
+            rewards.append(reward)
             continue
         elif think_count > 1:
-            rewards.append(-0.5)  # Demasiados cierres
+            reward -= 0.5  # Demasiados cierres
         
         # Verificar que después de </player_think> solo esté el movimiento
         if "</player_think>" in completion:
             after_think = completion.split("</player_think>")[-1].strip()
             if not re.fullmatch(r"<\|move\|><\|\d-\d\|><\|end\|>", after_think):
-                rewards.append(-0.5)  # Formato incorrecto después del pensamiento
+                reward -= 0.5  # Formato incorrecto después del pensamiento
         
         # Extraer el movimiento del texto generado
         move = extract_move(completion)
         
         if not move:
-            rewards.append(-1.0)  # No se puede extraer movimiento
+            reward = -1.0  # No se puede extraer movimiento
+            rewards.append(reward)
             continue
         
         # Extraer el tablero del prompt
@@ -244,8 +248,11 @@ def reward_func(completions, prompts=None, **kwargs):
         # BONUS por formato perfecto
         format_bonus = 0.1
         
-        final_reward = move_quality + thinking_quality + format_bonus
+        final_reward = move_quality + thinking_quality + format_bonus + reward
         rewards.append(final_reward)
+    
+    # Asegurar que tenemos el mismo número de recompensas que completions
+    assert len(rewards) == len(completions), f"Recompensas: {len(rewards)}, Completions: {len(completions)}"
     
     return rewards
 
