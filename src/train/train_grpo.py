@@ -197,7 +197,7 @@ def main():
         learning_rate=5e-6,
         optim="adamw_torch",
         num_generations=4,
-        use_liger_loss=True,
+        use_liger_loss=False,
         beta=0.0,
         remove_unused_columns=False,
         save_steps=250,
