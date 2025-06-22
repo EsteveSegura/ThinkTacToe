@@ -285,7 +285,6 @@ trainer = GRPOTrainer(
     reward_funcs=reward_func,
     args=training_args,
     train_dataset=dataset,
-    tokenizer=None,  # Usar el tokenizer del modelo
 )
 
 trainer.train()
