@@ -137,6 +137,17 @@ def reward_func(completions, prompts=None, **kwargs):
     for i, completion in enumerate(completions):
         prompt = prompts[i] if prompts else ""
         
+        # REGLA 1: Verificar que contenga </player_think>
+        if "</player_think>" not in completion:
+            rewards.append(-2.0)  # Penalización fuerte por falta de </player_think>
+            continue
+        
+        # REGLA 2: Verificar formato del movimiento final
+        move_pattern = r'<\|move\|><\|(\d)-(\d)\|><\|end\|>$'
+        if not re.search(move_pattern, completion.strip()):
+            rewards.append(-1.5)  # Penalización por formato incorrecto
+            continue
+        
         # Extraer el movimiento del texto generado
         move = extract_move(completion)
         
@@ -148,8 +159,13 @@ def reward_func(completions, prompts=None, **kwargs):
         board = extract_board_from_prompt(prompt)
         
         # Evaluar la calidad del movimiento
-        reward = evaluate_move_quality(board, move)
-        rewards.append(reward)
+        base_reward = evaluate_move_quality(board, move)
+        
+        # BONUS: Recompensa adicional por formato perfecto
+        format_bonus = 0.1 if re.search(move_pattern, completion.strip()) else 0.0
+        
+        final_reward = base_reward + format_bonus
+        rewards.append(final_reward)
     
     return rewards
 
@@ -166,7 +182,6 @@ training_args = GRPOConfig(
     save_total_limit=1,
     logging_steps=50,
     warmup_steps=10,
-    max_prompt_length=128,
     max_completion_length=128,
 )
 
