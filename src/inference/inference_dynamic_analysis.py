@@ -26,67 +26,12 @@ from src.dataset.board_tokenizer import board_to_token_representation
 # Configuración de modelos a probar
 MODELS_CONFIG = [
     # Modelos 0.5B
-    {
-        'name': 'qwen2.5-0.5b-tictactoe-sft-llm',
-        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-sft-llm/checkpoint-189',
+        {
+        'name': 'qwen2.5-1.5b-tictactoe-grpo-llm',
+        'path': '/home/ThinkTacToe/qwen2.5-1.5b-tictactoe-grpo-llm/checkpoint-checkpoint-1000',
         'has_think': True
     },
-    {
-        'name': 'qwen2.5-0.5b-tictactoe-sft-nothink',
-        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-sft-nothink/checkpoint-189',
-        'has_think': False
-    },
-    {
-        'name': 'qwen2.5-0.5b-tictactoe-sft-template',
-        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-sft-template/checkpoint-189',
-        'has_think': True
-    },
-    {
-        'name': 'qwen2.5-0.5b-tictactoe-dpo-llm',
-        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-dpo-llm/checkpoint-375',
-        'has_think': True
-    },
-    {
-        'name': 'qwen2.5-0.5b-tictactoe-dpo-nothink',
-        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-dpo-nothink/checkpoint-375',
-        'has_think': False
-    },
-    {
-        'name': 'qwen2.5-0.5b-tictactoe-dpo-template',
-        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-dpo-template/checkpoint-375',
-        'has_think': True
-    },
-    # Modelos 1.5B
-    {
-        'name': 'qwen2.5-1.5b-tictactoe-sft-llm',
-        'path': '/home/ThinkTacToe/qwen2.5-1.5b-tictactoe-sft-llm/checkpoint-189',
-        'has_think': True
-    },
-    {
-        'name': 'qwen2.5-1.5b-tictactoe-sft-nothink',
-        'path': '/home/ThinkTacToe/qwen2.5-1.5b-tictactoe-sft-nothink/checkpoint-189',
-        'has_think': False
-    },
-    {
-        'name': 'qwen2.5-1.5b-tictactoe-sft-template',
-        'path': '/home/ThinkTacToe/qwen2.5-1.5b-tictactoe-sft-template/checkpoint-189',
-        'has_think': True
-    },
-    {
-        'name': 'qwen2.5-1.5b-tictactoe-dpo-llm',
-        'path': '/home/ThinkTacToe/qwen2.5-1.5b-tictactoe-dpo-llm/checkpoint-750',
-        'has_think': True
-    },
-    {
-        'name': 'qwen2.5-1.5b-tictactoe-dpo-nothink',
-        'path': '/home/ThinkTacToe/qwen2.5-1.5b-tictactoe-dpo-nothink/checkpoint-375',
-        'has_think': False
-    },
-    {
-        'name': 'qwen2.5-1.5b-tictactoe-dpo-template',
-        'path': '/home/ThinkTacToe/qwen2.5-1.5b-tictactoe-dpo-template/checkpoint-375',
-        'has_think': True
-    },
+
 ]
 
 def create_random_board() -> list:
@@ -368,7 +313,7 @@ if __name__ == "__main__":
     
     for model_config in MODELS_CONFIG:
         try:
-            df = test_model(model_config, num_games=100)
+            df = test_model(model_config, num_games=500)
             if not df.empty:
                 all_results.append(df)
                 
