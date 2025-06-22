@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
-model_name = "/Users/usuario/ThinkTacToe/qwen2.5-1.5b-tictactoe-sft-llm/checkpoint-189"
+model_name = "-"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)

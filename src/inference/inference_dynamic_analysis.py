@@ -170,7 +170,7 @@ def evaluate_move(board: list, move: tuple) -> dict:
         'optimal_move': optimal_move
     }
 
-def infer(model, tokenizer, prompt: str, max_new_tokens: int = 3000):
+def infer(model, tokenizer, prompt: str, max_new_tokens: int = 600):
     """
     Realiza la inferencia con el modelo y retorna el movimiento.
     """

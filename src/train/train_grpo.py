@@ -191,14 +191,14 @@ def main():
     # Configuración GRPO
     config = GRPOConfig(
         output_dir=args.output_dir,
-        per_device_train_batch_size=4,
-        num_train_epochs=1,
+        per_device_train_batch_size=2,
+        num_train_epochs=3,
         logging_steps=10,
         learning_rate=5e-6,
         optim="adamw_torch",
-        num_generations=2,
-        use_liger_loss=False,
-        beta=0.0,
+        num_generations=4,
+        use_liger_loss=True,
+        beta=0.1,
         remove_unused_columns=False,
         save_steps=250,
         save_total_limit=1,
@@ -210,11 +210,10 @@ def main():
         temperature=1.0,
         top_p=1.0,
         repetition_penalty=1.0,
-        scale_rewards=True,
-        loss_type="bnpo",
-        mask_truncated_completions=False,
-        log_completions=False
+        scale_rewards=False,
+        log_completions=True
     )
+
 
     # Trainer GRPO
     trainer = GRPOTrainer(
