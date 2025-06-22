@@ -192,11 +192,11 @@ def main():
     config = GRPOConfig(
         output_dir=args.output_dir,
         per_device_train_batch_size=4,
-        num_train_epochs=3,
+        num_train_epochs=1,
         logging_steps=10,
         learning_rate=5e-6,
         optim="adamw_torch",
-        num_generations=4,
+        num_generations=2,
         use_liger_loss=False,
         beta=0.0,
         remove_unused_columns=False,
