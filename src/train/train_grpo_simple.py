@@ -1,38 +1,43 @@
 # train_grpo_simple.py
 from datasets import load_dataset
 from trl import GRPOConfig, GRPOTrainer
-import logging
-import os
 import json
+import os
+import sys
 from datetime import datetime
 
-# Configurar logging personalizado
-log_dir = "logs"
-os.makedirs(log_dir, exist_ok=True)
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_file = os.path.join(log_dir, f"grpo_training_{timestamp}.log")
+# Configurar logging simple
+timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+log_file = f"logs/grpo_training_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
 
-# Crear archivo de log con formato personalizado
-with open(log_file, 'w') as f:
-    f.write("=== GRPO Training Logs ===\n")
-    f.write(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    f.write("=" * 50 + "\n\n")
+# Crear directorio logs si no existe
+os.makedirs("logs", exist_ok=True)
 
-# Configurar el logger estándar para otros mensajes
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()  # Solo mostrar en consola
-    ]
-)
+# Clase para capturar la salida y guardarla en archivo
+class Logger:
+    def __init__(self, filename):
+        self.terminal = sys.stdout
+        self.log = open(filename, 'w')
+    
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+        self.log.flush()
+    
+    def flush(self):
+        self.terminal.flush()
+        self.log.flush()
 
-logger = logging.getLogger(__name__)
-logger.info(f"Iniciando entrenamiento GRPO - Logs guardados en: {log_file}")
+# Redirigir stdout al archivo
+sys.stdout = Logger(log_file)
+
+print(f"=== GRPO Training Logs ===")
+print(f"Started at: {timestamp}")
+print("=" * 50)
+print()
 
 # Cargar dataset local
 dataset = load_dataset("json", data_files="./datasets/tictactoe_grpo_llm.jsonl", split="train")
-logger.info(f"Dataset cargado: {len(dataset)} ejemplos")
 
 # Función de recompensa simple: recompensa basada en la longitud del pensamiento
 def reward_think_length(completions, **kwargs):
@@ -64,43 +69,13 @@ training_args = GRPOConfig(
     save_steps=50,
     logging_steps=10,
     warmup_steps=10,
-    # Configuración de logging
-    logging_dir=f"logs/tensorboard_{timestamp}",
-    report_to=["tensorboard"],
 )
 
-logger.info(f"Configuración de entrenamiento: {training_args}")
-
-# Clase personalizada para logging de GRPO
-class GRPOTrainerWithLogging(GRPOTrainer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.log_file = log_file
-    
-    def log(self, logs):
-        # Llamar al método original
-        super().log(logs)
-        
-        # Guardar en formato personalizado si es un step de logging
-        if "step" in logs:
-            step = logs["step"]
-            if step % self.args.logging_steps == 0:
-                with open(self.log_file, 'a') as f:
-                    f.write(f"Step {step}: {json.dumps(logs, indent=2)}\n")
-                    f.write("-" * 30 + "\n")
-
-trainer = GRPOTrainerWithLogging(
+trainer = GRPOTrainer(
     model="GiRLaZo/qwen2.5-0.5b-tictactoe-sft-llm",
     reward_funcs=reward_think_length,
     args=training_args,
     train_dataset=dataset,
 )
 
-logger.info("Iniciando entrenamiento...")
 trainer.train()
-
-# Escribir finalización en el log
-with open(log_file, 'a') as f:
-    f.write(f"\nTraining completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-
-logger.info("Entrenamiento completado!")
