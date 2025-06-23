@@ -127,7 +127,7 @@ def extract_board_from_prompt(prompt):
         return None
 
 def evaluate_move_quality(board, move):
-    """Evalúa la calidad del movimiento en el contexto del tablero"""
+    """Evalúa la calidad del movimiento en el contexto del tablero de manera más inteligente"""
     if not board or not move:
         return 0.0
     
@@ -150,13 +150,79 @@ def evaluate_move_quality(board, move):
     if check_winner(opponent_board) == 'O':
         return 0.8  # Movimiento bloqueador
     
-    # Verificar si es un movimiento estratégico (centro, esquinas)
-    if move == (1, 1):  # Centro
-        return 0.6
-    elif move in [(0, 0), (0, 2), (2, 0), (2, 2)]:  # Esquinas
-        return 0.4
-    else:  # Laterales
-        return 0.2
+    # Evaluación estratégica más sofisticada
+    score = 0.0
+    
+    # Verificar si el centro está disponible y es una buena opción
+    center_available = (1, 1) in valid_moves
+    is_center_move = move == (1, 1)
+    
+    # Si el centro está disponible y no lo tomamos, penalizar ligeramente
+    if center_available and not is_center_move:
+        # Solo penalizar si no hay una razón estratégica clara
+        # Verificar si nuestro movimiento crea una amenaza
+        threat_created = False
+        
+        # Verificar si creamos una línea de dos en fila
+        for direction in [(0, 1), (1, 0), (1, 1), (1, -1)]:  # horizontal, vertical, diagonales
+            count = 1  # Contar nuestro movimiento
+            # Contar en dirección positiva
+            for step in range(1, 3):
+                new_row, new_col = row + step * direction[0], col + step * direction[1]
+                if 0 <= new_row < 3 and 0 <= new_col < 3 and new_board[new_row][new_col] == 'X':
+                    count += 1
+                else:
+                    break
+            # Contar en dirección negativa
+            for step in range(1, 3):
+                new_row, new_col = row - step * direction[0], col - step * direction[1]
+                if 0 <= new_row < 3 and 0 <= new_col < 3 and new_board[new_row][new_col] == 'X':
+                    count += 1
+                else:
+                    break
+            
+            if count >= 2:
+                threat_created = True
+                break
+        
+        if not threat_created:
+            score -= 0.1  # Penalización menor por no tomar el centro sin razón
+    
+    # Recompensar movimientos que crean amenazas
+    if threat_created:
+        score += 0.3
+    
+    # Recompensar movimientos en esquinas (estratégicamente buenos)
+    if move in [(0, 0), (0, 2), (2, 0), (2, 2)]:
+        score += 0.2
+    
+    # Recompensar movimientos en el centro (pero no excesivamente)
+    if is_center_move:
+        score += 0.1  # Recompensa menor que antes
+    
+    # Recompensar movimientos que bloquean amenazas del oponente
+    # Verificar si el oponente tiene dos en línea en cualquier dirección
+    opponent_threats_blocked = 0
+    for direction in [(0, 1), (1, 0), (1, 1), (1, -1)]:
+        count = 0
+        for step in range(-2, 3):
+            new_row, new_col = row + step * direction[0], col + step * direction[1]
+            if 0 <= new_row < 3 and 0 <= new_col < 3:
+                if board[new_row][new_col] == 'O':
+                    count += 1
+                elif board[new_row][new_col] == 'X':
+                    count = 0  # Reset si encontramos nuestra pieza
+                    break
+        if count >= 2:
+            opponent_threats_blocked += 1
+    
+    if opponent_threats_blocked > 0:
+        score += 0.2 * opponent_threats_blocked
+    
+    # Recompensa base para movimientos válidos
+    base_reward = 0.3
+    
+    return base_reward + score
 
 def evaluate_thinking_quality(completion):
     """Evalúa la calidad del pensamiento del modelo"""
