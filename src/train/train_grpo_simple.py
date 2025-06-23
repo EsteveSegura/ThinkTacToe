@@ -152,6 +152,7 @@ def evaluate_move_quality(board, move):
     
     # Evaluación estratégica más sofisticada
     score = 0.0
+    threat_created = False  # Inicializar la variable para evitar errores
     
     # Verificar si el centro está disponible y es una buena opción
     center_available = (1, 1) in valid_moves
