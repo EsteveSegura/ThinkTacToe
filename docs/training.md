@@ -233,11 +233,6 @@ The logging system ensures that all training metrics are preserved for later ana
 
 
 
-accelerate launch src/train/train_sft.py \
-    --model_name "Qwen/Qwen2.5-0.5B" \
-    --data_files "./datasets/tictactor_sft_nothink_minmax.jsonl" \
-    --output_dir "qwen2.5-0.5b-tictactoe-sft-nothink-minmax" \
-    --logs_dir "./logs"
 
 
 
@@ -246,3 +241,14 @@ accelerate launch src/train/train_grpo_minimax.py \
     --data_files "./datasets/tictactoe_grpo_from_minimax_20250624_175237.jsonl" \
     --output_dir "qwen2.5-0.5b-tictactoe-grpo-llm" \
     --logs_dir "./logs"
+
+
+
+accelerate launch src/train/train_sft_minimax_fixed.py \
+    --model_name "Qwen/Qwen2.5-0.5B" \
+    --data_files "./datasets/tictactoe_minimax_20250624_214328.jsonl" \
+    --output_dir "qwen2.5-0.5b-tictactoe-sft-minimax-fixed" \
+    --logs_dir "./logs" \
+    --num_epochs 3 \
+    --batch_size 8 \
+    --learning_rate 5e-5
