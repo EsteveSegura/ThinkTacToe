@@ -165,7 +165,6 @@ def main():
     print(f"🚀 Inicializando trainer...")
     trainer = SFTTrainer(
         model=model,
-        tokenizer=tokenizer,  # Clave: pasar tokenizer explícitamente
         args=training_args,
         train_dataset=dataset,
         formatting_func=formatting_func,
