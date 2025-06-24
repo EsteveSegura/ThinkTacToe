@@ -109,7 +109,7 @@ def get_model_move(model, tokenizer, board, current_player):
     # Generar
     with torch.no_grad():
         outputs = model.generate(
-            inputs.input_ids,
+            inputs["input_ids"],
             max_new_tokens=10,
             temperature=0.1,
             do_sample=True,
