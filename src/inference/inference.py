@@ -7,7 +7,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True).to(device).eval()
 
-def infer(prompt: str, max_new_tokens: int = 300):
+def infer(prompt: str, max_new_tokens: int = 600):
     inputs = tokenizer(prompt, return_tensors="pt", add_special_tokens=False).to(device)
 
     eos_token = "<|end|>"
