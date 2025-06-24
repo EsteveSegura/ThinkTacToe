@@ -20,7 +20,7 @@ from src.dataset.board_engine import (
     apply_move,
     get_valid_moves,
     check_winner,
-    is_board_full
+    is_draw
 )
 from src.dataset.board_tokenizer import board_to_token_representation
 
@@ -176,7 +176,7 @@ def self_play_game(model_path: str):
             break
         
         # Verificar si es empate
-        if is_board_full(board):
+        if is_draw(board):
             print(f"🤝 ¡EMPATE!")
             print(f"📊 La partida terminó en {turn_count} turnos")
             break
