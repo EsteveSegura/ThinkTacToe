@@ -232,7 +232,11 @@ The logging system ensures that all training metrics are preserved for later ana
 
 
 
-
+accelerate launch src/train/train_sft.py \
+    --model_name "Qwen/Qwen2.5-0.5B" \
+    --data_files "./datasets/tictactoe_minimax_20250624_214328.jsonl" \
+    --output_dir "qwen2.5-0.5b-tictactoe-sft-nothink-minmax" \
+    --logs_dir "./logs"
 
 
 
