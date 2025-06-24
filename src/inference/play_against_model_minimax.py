@@ -102,6 +102,10 @@ def get_model_move(model, tokenizer, board, current_player):
     # Tokenizar
     inputs = tokenizer(prompt, return_tensors="pt")
     
+    # Mover inputs al mismo dispositivo que el modelo
+    device = next(model.parameters()).device
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+    
     # Generar
     with torch.no_grad():
         outputs = model.generate(
