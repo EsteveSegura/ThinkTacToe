@@ -142,7 +142,7 @@ def main():
         save_steps=250,
         save_total_limit=2,
         report_to="none",
-        fp16=True,
+        bf16=True,                       # Cambiado de fp16 a bf16 para evitar conflictos
         gradient_checkpointing=True,
         max_seq_length=256,
         warmup_steps=50,
