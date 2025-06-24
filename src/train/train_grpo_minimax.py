@@ -342,7 +342,7 @@ print(f"   - Max completion length: {training_args.max_completion_length}")
 
 # Inicializar trainer (manejo automático del tokenizer como en train_grpo_simple.py)
 trainer = GRPOTrainer(
-    model="qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-78",
+    model="qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-26",
     reward_funcs=reward_func,
     args=training_args,
     train_dataset=dataset,
