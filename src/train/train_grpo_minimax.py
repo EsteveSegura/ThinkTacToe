@@ -329,7 +329,6 @@ training_args = GRPOConfig(
     weight_decay=0.01,
     lr_scheduler_type="cosine",
     # CORRECCIÓN: Añadir secuencia de parada
-    stop_sequences=["<|end|>"],
     # Configuraciones GRPO específicas
     loss_type="dr_grpo",
     scale_rewards=False,
