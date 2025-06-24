@@ -27,8 +27,8 @@ from src.dataset.board_tokenizer import board_to_token_representation
 MODELS_CONFIG = [
     # Modelos 0.5B
     {
-        'name': 'qwen2.5-0.5b-tictactoe-sft-llm-minmax',
-        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-sft-llm-minmax/checkpoint-1000',
+        'name': 'qwen2.5-0.5b-tictactoe-sft-nothink-minmax',
+        'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-1000',
         'has_think': True
     },
 ]

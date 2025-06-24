@@ -3,7 +3,7 @@ import torch
 import os
 
 # Modelo entrenado con GRPO - cargar el último checkpoint
-model_name = "qwen2.5-0.5b-tictactoe-grpo"
+model_name = "qwen2.5-0.5b-tictactoe-sft-nothink-minmax"
 
 # Buscar el último checkpoint
 checkpoint_dir = model_name
