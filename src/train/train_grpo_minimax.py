@@ -6,7 +6,6 @@ Optimizado para movimientos óptimos calculados por algoritmo minimax.
 
 from datasets import load_dataset
 from trl import GRPOConfig, GRPOTrainer
-from transformers import AutoTokenizer, AutoModelForCausalLM
 import json
 import os
 import sys
@@ -341,38 +340,9 @@ print(f"   - Batch size: {training_args.per_device_train_batch_size}")
 print(f"   - Epochs: {training_args.num_train_epochs}")
 print(f"   - Max completion length: {training_args.max_completion_length}")
 
-# Cargar modelo y tokenizer con special tokens
-model_name = "qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-78"
-print(f"📁 Cargando modelo: {model_name}")
-
-# Definir special tokens para el formato minimax
-SPECIAL_TOKENS = [
-    "<|board_start|>", "<|board_end|>", "<|player|>", 
-    "<|move|>", "<|end|>", "<|blank|>"
-] + [f"<|{r}-{c}|>" for r in range(3) for c in range(3)]
-
-print(f"🔧 Añadiendo {len(SPECIAL_TOKENS)} special tokens...")
-
-# Cargar tokenizer y añadir special tokens
-tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-tokenizer.add_special_tokens({"additional_special_tokens": SPECIAL_TOKENS})
-
-# Cargar modelo
-model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype="auto",
-    device_map="auto",
-    trust_remote_code=True
-)
-
-# Redimensionar embeddings para los nuevos tokens
-model.resize_token_embeddings(len(tokenizer))
-print(f"✅ Modelo cargado y redimensionado para {len(tokenizer)} tokens")
-
-# Inicializar trainer
+# Inicializar trainer (manejo automático del tokenizer como en train_grpo_simple.py)
 trainer = GRPOTrainer(
-    model=model,
-    tokenizer=tokenizer,
+    model="qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-78",
     reward_funcs=reward_func,
     args=training_args,
     train_dataset=dataset,
