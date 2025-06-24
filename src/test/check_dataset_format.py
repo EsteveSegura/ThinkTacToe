@@ -54,7 +54,7 @@ def check_dataset_format():
                         
                         # Verificar formato
                         import re
-                        if re.match(r'<\|move\|><\|\d-\d\|><\|end\|>', move_text):
+                        if re.search(r'<\|move\|><\|\d-\d\|><\|end\|>', move_text):
                             print("   ✅ Formato correcto")
                         else:
                             print("   ❌ Formato incorrecto")
