@@ -140,7 +140,7 @@ def main():
     print("   - ¡Tú empiezas la partida!")
     
     # Cargar modelo
-    model_path = "./qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-78"
+    model_path = "./qwen2.5-0.5b-tictactoe-grpo-minimax/checkpoint-208"
     
     if not os.path.exists(model_path):
         print(f"❌ Error: No se encontró el modelo en {model_path}")
