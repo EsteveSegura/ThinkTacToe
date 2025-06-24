@@ -99,9 +99,9 @@ def main():
     
     tokenizer.add_special_tokens({"additional_special_tokens": SPECIAL_TOKENS})
     
-    # Redimensionar embeddings con padding múltiplo de 64 (opcional pero recomendado)
+    # Redimensionar embeddings (sin resize_to_multiple_of para compatibilidad)
     original_vocab_size = model.get_input_embeddings().weight.shape[0]
-    model.resize_token_embeddings(len(tokenizer), resize_to_multiple_of=64)
+    model.resize_token_embeddings(len(tokenizer))
     new_vocab_size = model.get_input_embeddings().weight.shape[0]
     
     print(f"   - Vocabulario original: {original_vocab_size}")
