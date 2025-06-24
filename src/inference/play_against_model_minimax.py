@@ -136,8 +136,8 @@ def main():
     print("📋 Instrucciones:")
     print("   - Escribe 'quit' para salir")
     print("   - Usa formato: fila,columna (ej: 1,1)")
-    print("   - Tú eres 'O', el modelo es 'X'")
-    print("   - El modelo juega primero")
+    print("   - Tú eres 'X', el modelo es 'O'")
+    print("   - ¡Tú empiezas la partida!")
     
     # Cargar modelo
     model_path = "./qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-78"
@@ -167,7 +167,7 @@ def main():
         
         print_board_ascii(board)
         
-        if current_player == "X":  # Turno del modelo
+        if current_player == "O":  # Turno del modelo
             print(f"\n🤖 Turno {turn_count}: El modelo está pensando...")
             move = get_model_move(model, tokenizer, board, current_player)
             
@@ -178,7 +178,7 @@ def main():
             print(f"🤖 El modelo juega en: {move}")
             board = apply_move(board, current_player, move)
             
-        else:  # Turno del usuario
+        else:  # Turno del usuario (X)
             print(f"\n👤 Turno {turn_count}: Tu turno!")
             move = get_user_move(board)
             
@@ -192,7 +192,7 @@ def main():
         winner = check_winner(board)
         if winner:
             print_board_ascii(board)
-            if winner == "X":
+            if winner == "O":
                 print("🤖 ¡El modelo ha ganado!")
             else:
                 print("👤 ¡Has ganado!")
