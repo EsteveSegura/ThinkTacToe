@@ -28,6 +28,13 @@ def infer(prompt: str, max_new_tokens: int = 600):
 
     print("Respuesta del modelo:\n" + output_text)
 
+tok_ids = tokenizer.encode("<|0-0|>", add_special_tokens=False)
+print(tok_ids)                             # ¿sólo un id?
+print(tokenizer.decode(tok_ids,            # → ''
+                      skip_special_tokens=True))
+print(tokenizer.decode(tok_ids,            # → '<|0-0|>'
+                      skip_special_tokens=False))
+
 if __name__ == "__main__":
     test_prompt = """<|board_start|>
 <|0-0|><|blank|> <|0-1|><|blank|> <|0-2|><|O|>
