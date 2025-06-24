@@ -172,7 +172,6 @@ def main():
         fp16=True,
         gradient_checkpointing=True,
         max_seq_length=512,  # Aumentado para el formato estructurado
-        eos_token="<|end|>",  # CORREGIDO: usar el token correcto
         warmup_steps=50,
         weight_decay=0.01,
         lr_scheduler_type="cosine",
