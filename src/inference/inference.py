@@ -30,12 +30,13 @@ def infer(prompt: str, max_new_tokens: int = 300):
 
 if __name__ == "__main__":
     test_prompt = """<|board_start|>
-<|0-0|><|blank|> <|0-1|><|blank|> <|0-2|><|X|>
-<|1-0|><|O|> <|1-1|><|blank|> <|1-2|><|blank|>
-<|2-0|><|blank|> <|2-1|><|X|> <|2-2|><|blank|>
+<|0-0|><|blank|> <|0-1|><|blank|> <|0-2|><|O|>
+<|1-0|><|blank|> <|1-1|><|blank|> <|1-2|><|blank|>
+<|2-0|><|X|> <|2-1|><|blank|> <|2-2|><|blank|>
 <|board_end|>
 <|turn|>bot
 <|symbol|>X
-<|move|>
-"""
+<|move|>"""
     infer(test_prompt)
+
+
