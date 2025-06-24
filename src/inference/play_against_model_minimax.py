@@ -20,7 +20,8 @@ from src.dataset.board_engine import (
     apply_move,
     get_valid_moves,
     check_winner,
-    is_draw
+    is_draw,
+    next_player
 )
 from src.dataset.board_tokenizer import board_to_token_representation
 
