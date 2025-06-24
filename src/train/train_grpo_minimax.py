@@ -305,20 +305,20 @@ def reward_func(completions, prompts=None, **kwargs):
 training_args = GRPOConfig(
     output_dir="qwen2.5-0.5b-tictactoe-grpo-minimax",
     num_train_epochs=1,
-    per_device_train_batch_size=8,  # Reducido para estabilidad
-    gradient_accumulation_steps=2,
+    per_device_train_batch_size=4,  # Reducido aún más para estabilidad
+    gradient_accumulation_steps=4,  # Aumentado para mantener batch efectivo
     learning_rate=5e-6,  # Learning rate más conservador
-    bf16=True,
+    bf16=True,  # Cambiado de fp16 a bf16 para estabilidad
     gradient_checkpointing=True,
     save_steps=100,
     save_total_limit=2,
     logging_steps=25,
     warmup_steps=20,
     max_completion_length=12,  # Reducido para evitar spam
-    temperature=0.3,  # Temperatura baja para movimientos más determinísticos
+    temperature=0.7,  # Aumentado para evitar problemas numéricos
     top_p=0.9,
-    repetition_penalty=1.1,
-    num_generations=8,  # Número de generaciones por prompt
+    repetition_penalty=1.0,  # Reducido para evitar problemas
+    num_generations=2,  # Reducido para estabilidad
     max_prompt_length=256,  # Prompts más cortos
     remove_unused_columns=False,
     dataloader_num_workers=0,
@@ -327,10 +327,13 @@ training_args = GRPOConfig(
     max_grad_norm=1.0,
     weight_decay=0.01,
     lr_scheduler_type="cosine",
-    # CORRECCIÓN: Añadir secuencia de parada
     # Configuraciones GRPO específicas
     loss_type="dr_grpo",
     scale_rewards=False,
+    # Configuraciones de generación más conservadoras
+    do_sample=True,
+    pad_token_id=0,  # Asegurar que el pad_token esté definido
+    eos_token_id=2,  # Asegurar que el eos_token esté definido
 )
 
 print(f"🤖 Iniciando entrenamiento GRPO con configuración optimizada...")
@@ -341,8 +344,9 @@ print(f"   - Epochs: {training_args.num_train_epochs}")
 print(f"   - Max completion length: {training_args.max_completion_length}")
 
 # Inicializar trainer (manejo automático del tokenizer como en train_grpo_simple.py)
+print(f"📁 Cargando modelo base para GRPO...")
 trainer = GRPOTrainer(
-    model="qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-26",
+    model="qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-78",  # Usar el modelo SFT entrenado
     reward_funcs=reward_func,
     args=training_args,
     train_dataset=dataset,
