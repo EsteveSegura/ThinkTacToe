@@ -34,7 +34,8 @@ if __name__ == "__main__":
 <|1-0|><|O|> <|1-1|><|blank|> <|1-2|><|blank|>
 <|2-0|><|blank|> <|2-1|><|X|> <|2-2|><|blank|>
 <|board_end|>
-<|player|>X
-<player_think>
+<|turn|>bot
+<|symbol|>X
+<|move|>
 """
     infer(test_prompt)
