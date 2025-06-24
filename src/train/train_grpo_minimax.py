@@ -331,7 +331,6 @@ training_args = GRPOConfig(
     loss_type="dr_grpo",
     scale_rewards=False,
     # Configuraciones de generación más conservadoras
-    do_sample=True,
     pad_token_id=0,  # Asegurar que el pad_token esté definido
     eos_token_id=2,  # Asegurar que el eos_token esté definido
 )
