@@ -29,6 +29,7 @@ def convert_minimax_to_grpo_format(minimax_line):
         # Encontrar las líneas del tablero
         board_lines = []
         player_info = None
+        symbol_info = None
         move_info = None
         
         for line in lines:
@@ -39,7 +40,7 @@ def convert_minimax_to_grpo_format(minimax_line):
             elif line.startswith('<|turn|>'):
                 player_info = line
             elif line.startswith('<|symbol|>'):
-                continue
+                symbol_info = line
             elif line.startswith('<|move|>'):
                 move_info = line
             elif line.startswith('<|end|>'):
@@ -48,13 +49,15 @@ def convert_minimax_to_grpo_format(minimax_line):
                 # Es una línea del tablero
                 board_lines.append(line)
         
-        # Construir el prompt (tablero + información del jugador)
+        # Construir el prompt (tablero + información del jugador + símbolo)
         prompt_lines = ['<|board_start|>']
         prompt_lines.extend(board_lines)
         prompt_lines.append('<|board_end|>')
         prompt_lines.append(player_info)
+        if symbol_info:
+            prompt_lines.append(symbol_info)
         
-        prompt = '\n'.join(prompt_lines)
+        prompt = '\n'.join(prompt_lines) + '\n'
         
         # Construir la completion (solo el movimiento, sin pensamiento)
         # Eliminar <|end|> duplicado si existe
@@ -77,7 +80,7 @@ def generate_grpo_dataset_from_minimax():
     Genera el dataset GRPO a partir del dataset minimax existente.
     """
     # Usar el archivo especificado por el usuario
-    minimax_path = Path("datasets/tictactor_sft_nothink_minmax.jsonl")
+    minimax_path = Path("datasets/tictactoe_minimax_20250624_205741.jsonl")
     if not minimax_path.exists():
         print(f"❌ No se encontró el archivo {minimax_path}")
         return
