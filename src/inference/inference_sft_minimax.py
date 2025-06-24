@@ -62,4 +62,9 @@ if __name__ == "__main__":
 <|turn|>bot
 <|symbol|>X
 <|move|>"""
+    
+    print("Prompt de entrada:")
+    print(test_prompt)
+    print("\n" + "="*50 + "\n")
+    
     infer(test_prompt) 
