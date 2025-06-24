@@ -340,7 +340,6 @@ print(f"   - Learning rate: {training_args.learning_rate}")
 print(f"   - Batch size: {training_args.per_device_train_batch_size}")
 print(f"   - Epochs: {training_args.num_train_epochs}")
 print(f"   - Max completion length: {training_args.max_completion_length}")
-print(f"   - Stop sequences: {training_args.stop_sequences}")
 
 # Cargar modelo y tokenizer con special tokens
 model_name = "qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-78"
