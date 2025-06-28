@@ -64,6 +64,7 @@ parser.add_argument("--output_dir", type=str, default="light_grpo_run", help="Di
 parser.add_argument("--max_steps", type=int, default=1000, help="Pasos máximo de entrenamiento")
 parser.add_argument("--logging_steps", type=int, default=25)
 parser.add_argument("--val_every", type=int, default=100, help="Pasos entre validaciones")
+parser.add_argument("--save_steps", type=int, default=250, help="Guardar checkpoint cada N pasos")
 args = parser.parse_args()
 
 DATASET_PATH = Path(args.dataset) if args.dataset else latest_dataset()
@@ -138,7 +139,9 @@ train_args = GRPOConfig(
     learning_rate=5e-6,
     num_train_epochs=3,
     logging_steps=args.logging_steps,
-    save_strategy="no",
+    save_strategy="steps",
+    save_steps=args.save_steps,
+    save_total_limit=3,
     remove_unused_columns=False,
     max_prompt_length=256,
     num_generations=2,
@@ -196,4 +199,8 @@ if tokenizer:
 
 print("🚀 Comenzando entrenamiento…")
 trainer.train()
-print("✅ Entrenamiento finalizado.") 
+print("💾 Guardando modelo final…")
+trainer.save_model(train_args.output_dir)
+if tokenizer:
+    tokenizer.save_pretrained(train_args.output_dir)
+print("✅ Entrenamiento finalizado. Modelo en", train_args.output_dir) 
