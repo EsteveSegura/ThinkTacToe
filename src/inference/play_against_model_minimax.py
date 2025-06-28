@@ -140,7 +140,7 @@ def main():
     print("   - ¡El modelo empieza la partida!")
     
     # Cargar modelo
-    model_path = "./qwen2.5-0.5b-tictactoe-grpo-minimax/checkpoint-104"
+    model_path = "./light_grpo_run/checkpoint-750"
     
     if not os.path.exists(model_path):
         print(f"❌ Error: No se encontró el modelo en {model_path}")
