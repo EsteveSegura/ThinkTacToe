@@ -12,6 +12,8 @@ import sys
 import re
 from datetime import datetime
 from pathlib import Path
+from transformers import AutoTokenizer, TrainerCallback
+import torch
 
 # Añadir el directorio raíz del proyecto al path
 project_root = Path(__file__).parent.parent.parent
@@ -310,7 +312,7 @@ training_args = GRPOConfig(
     gradient_accumulation_steps=4,  # Aumentado para mantener batch efectivo
     learning_rate=5e-6,  # Learning rate más conservador
     bf16=True,  # Cambiado de fp16 a bf16 para estabilidad
-    gradient_checkpointing=True,
+    gradient_checkpointing=False,
     save_steps=100,
     save_total_limit=2,
     logging_steps=25,
@@ -343,12 +345,58 @@ print(f"   - Max completion length: {training_args.max_completion_length}")
 
 # Inicializar trainer (manejo automático del tokenizer como en train_grpo_simple.py)
 print(f"📁 Cargando modelo base para GRPO...")
+
+# Cargar tokenizer del modelo base para pruebas de generación
+print("🔤 Cargando tokenizer para inferencias de test...")
+try:
+    tokenizer = AutoTokenizer.from_pretrained("qwen2.5-0.5b-tictactoe-sft-nothink-minmax", trust_remote_code=True)
+except Exception as e:
+    print(f"⚠️  No se pudo cargar el tokenizer automáticamente: {e}")
+    tokenizer = None
+
+class InferenceCallback(TrainerCallback):
+    """Realiza inferencias rápidas sobre un pequeño set de prompts cada N steps"""
+    def __init__(self, tokenizer, prompts, every_n_steps=100, max_new_tokens=12):
+        self.tokenizer = tokenizer
+        self.prompts = prompts
+        self.every_n_steps = every_n_steps
+        self.max_new_tokens = max_new_tokens
+
+    def on_step_end(self, args, state, control, **kwargs):
+        if self.tokenizer is None:
+            return control
+        if state.global_step == 0 or state.global_step % self.every_n_steps != 0:
+            return control
+        model = kwargs.get("model")
+        if model is None:
+            return control
+        # Generar inferencias
+        model.eval()
+        inputs = self.tokenizer(self.prompts, return_tensors="pt", padding=True, truncation=True).to(model.device)
+        with torch.no_grad():
+            gen_ids = model.generate(**inputs, max_new_tokens=self.max_new_tokens, temperature=0.7, top_p=0.9)
+        outputs = self.tokenizer.batch_decode(gen_ids, skip_special_tokens=True)
+        print("\n===== Inferencias de test (paso", state.global_step, ") =====")
+        for prompt, out in zip(self.prompts, outputs):
+            first_line_prompt = prompt.replace("\n", " ")[:60]
+            print("P:", first_line_prompt)
+            print("→", out)
+            print("---")
+        model.train()
+        return control
+
+# Seleccionar algunos prompts de ejemplo del propio dataset
+sample_prompts = [dataset[i]["prompt"] for i in range(min(5, len(dataset)))]
+
 trainer = GRPOTrainer(
     model="qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-156",
     reward_funcs=reward_func,
     args=training_args,
     train_dataset=dataset,
 )
+
+# Añadir callback de inferencia al trainer
+trainer.add_callback(InferenceCallback(tokenizer, sample_prompts, every_n_steps=100))
 
 print("🚀 Comenzando entrenamiento...")
 trainer.train()
