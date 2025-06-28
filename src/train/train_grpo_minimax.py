@@ -259,16 +259,32 @@ def evaluate_format_quality(completion):
     return score
 
 def reward_func(completions, prompts=None, **kwargs):
-    """Función de recompensa optimizada para el formato minimax"""
+    """Función de recompensa optimizada para el formato minimax con logging de depuración"""
+    # Contadores para diagnóstico
+    if not hasattr(reward_func, "call_id"):
+        reward_func.call_id = 0
+    reward_func.call_id += 1
+
+    stats = {
+        "total": 0,
+        "bad_token": 0,
+        "no_move": 0,
+        "no_prompt_info": 0,
+        "invalid_move": 0,
+        "ok": 0,
+    }
+
     rewards = []
     
     for i, completion in enumerate(completions):
         prompt = prompts[i] if prompts else ""
+        stats["total"] += 1
         reward = 0.0
         
         # PENALIZACIÓN FUERTE por texto fuera de contexto
         if contains_bad_token(completion):
             reward = -3.0
+            stats["bad_token"] += 1
             rewards.append(reward)
             continue
         
@@ -277,6 +293,7 @@ def reward_func(completions, prompts=None, **kwargs):
         
         if not move:
             reward = -2.0  # No se puede extraer movimiento
+            stats["no_move"] += 1
             rewards.append(reward)
             continue
         
@@ -286,11 +303,14 @@ def reward_func(completions, prompts=None, **kwargs):
         
         if not board or not current_player:
             reward = -1.0  # No se puede extraer información del prompt
+            stats["no_prompt_info"] += 1
             rewards.append(reward)
             continue
         
         # Evaluar la calidad del movimiento
         move_quality = evaluate_move_quality_minimax(board, move, current_player)
+        if move_quality == -4.0:
+            stats["invalid_move"] += 1
         
         # Evaluar la calidad del formato
         format_quality = evaluate_format_quality(completion)
@@ -298,9 +318,24 @@ def reward_func(completions, prompts=None, **kwargs):
         # Combinar recompensas - Ajustado para mantener simetría
         final_reward = move_quality + format_quality * 0.5  # Reducir peso del formato
         rewards.append(final_reward)
+        stats["ok"] += 1
     
     # Asegurar que tenemos el mismo número de recompensas que completions
     assert len(rewards) == len(completions), f"Recompensas: {len(rewards)}, Completions: {len(completions)}"
+
+    # --- Logging de diagnóstico ---
+    if reward_func.call_id % 25 == 0:  # Cada 25 llamadas (~ logging_steps)
+        print(f"\n[REWARD DEBUG] Llamada #{reward_func.call_id}")
+        print("  Total completions:", stats["total"])
+        print("  Sin movimiento extraíble:", stats["no_move"])
+        print("  Bad token:", stats["bad_token"])
+        print("  Sin info prompt:", stats["no_prompt_info"])
+        print("  Movimiento inválido:", stats["invalid_move"])
+        print("  OK:", stats["ok"])
+        if stats["no_move"] > 0:
+            # Imprimir ejemplo de completion para inspección
+            idx = completions.index(next(c for c in completions if extract_move(c) is None))
+            print("  Ejemplo sin movimiento =>", completions[idx][:120])
     
     return rewards
 
