@@ -57,7 +57,8 @@ print("=" * 50)
 print()
 
 # Cargar dataset GRPO generado desde minimax
-dataset_path = "./datasets/tictactoe_grpo_from_minimax_20250624_175237.jsonl"
+
+dataset_path = "./datasets/tictactoe_grpo_from_minimax_20250628_211308.jsonl"
 print(f"📁 Cargando dataset: {dataset_path}")
 dataset = load_dataset("json", data_files=dataset_path, split="train")
 print(f"✅ Dataset cargado: {len(dataset)} ejemplos")
