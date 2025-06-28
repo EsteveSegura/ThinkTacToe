@@ -356,7 +356,7 @@ training_args = GRPOConfig(
     save_total_limit=2,
     logging_steps=25,
     warmup_steps=20,
-    max_completion_length=12,  # Reducido para evitar spam
+    max_completion_length=20,  # Reducido para evitar spam
     temperature=0.7,  # Aumentado para evitar problemas numéricos
     top_p=0.9,
     repetition_penalty=1.0,  # Reducido para evitar problemas
@@ -395,7 +395,7 @@ except Exception as e:
 
 class InferenceCallback(TrainerCallback):
     """Realiza inferencias rápidas sobre un pequeño set de prompts cada N steps"""
-    def __init__(self, tokenizer, prompts, every_n_steps=100, max_new_tokens=12):
+    def __init__(self, tokenizer, prompts, every_n_steps=100, max_new_tokens=20):
         self.tokenizer = tokenizer
         self.prompts = prompts
         self.every_n_steps = every_n_steps
