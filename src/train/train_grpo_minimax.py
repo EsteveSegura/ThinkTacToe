@@ -60,7 +60,7 @@ print()
 
 # Cargar dataset GRPO generado desde minimax
 
-dataset_path = "./datasets/tictactoe_grpo_from_minimax_20250628_211308.jsonl"
+dataset_path = "./datasets/tictactoe_grpo_from_minimax_20250628_220808.jsonl"
 print(f"📁 Cargando dataset: {dataset_path}")
 dataset = load_dataset("json", data_files=dataset_path, split="train")
 print(f"✅ Dataset cargado: {len(dataset)} ejemplos")
@@ -98,10 +98,9 @@ def contains_bad_token(text):
     return False
 
 def extract_move(text):
-    """Extrae el movimiento del texto generado por el modelo (acepta <|end|> opcional)"""
-    # Aceptar tanto con <|end|> como sin él
-    match = re.search(r"<\|move\|><\|([0-2])-([0-2])\|>(?:<\|end\|>)?", text)
-    return (int(match.group(1)), int(match.group(2))) if match else None
+    """Extrae el movimiento del texto generado por el modelo (formato estricto)"""
+    m = re.search(r"<\|move\|><\|([0-2])-([0-2])\|><\|end\|>", text)
+    return (int(m.group(1)), int(m.group(2))) if m else None
 
 def extract_board_from_prompt(prompt):
     """Extrae el tablero del prompt para evaluar el movimiento"""
@@ -237,29 +236,21 @@ def evaluate_move_quality_minimax(board, move, current_player):
     return base_reward + score
 
 def evaluate_format_quality(completion):
-    """Evalúa la calidad del formato de la completion (permite <|end|> opcional)"""
+    """Evalúa la calidad del formato (solo formato estricto válido)"""
     if not completion:
         return -1.0
 
-    score = 0.0
+    completion = completion.strip()
 
-    # Formato perfecto con <|end|>
-    if re.fullmatch(r"<\|move\|><\|[0-2]-[0-2]\|><\|end\|>", completion.strip()):
-        score += 1.0
-    # Formato correcto sin <|end|>
-    elif re.fullmatch(r"<\|move\|><\|[0-2]-[0-2]\|>", completion.strip()):
-        score += 0.8
-    # Contiene la estructura de movimiento en alguna parte
-    elif re.search(r"<\|move\|><\|[0-2]-[0-2]\|>", completion):
-        score += 0.5
-    else:
-        score -= 1.0  # Formato incorrecto
+    # Formato perfecto
+    if re.fullmatch(r"<\|move\|><\|[0-2]-[0-2]\|><\|end\|>", completion):
+        return 1.0
 
-    # Penalizar texto extra (solo si supera 30 caracteres)
-    if len(completion.strip()) > 30:
-        score -= 0.3
+    # Formato correcto pero con texto extra alrededor
+    if re.search(r"<\|move\|><\|[0-2]-[0-2]\|><\|end\|>", completion):
+        return 0.4
 
-    return score
+    return -1.0
 
 def reward_func(completions, prompts=None, **kwargs):
     """Función de recompensa optimizada para el formato minimax con logging de depuración"""

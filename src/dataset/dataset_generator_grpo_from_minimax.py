@@ -58,15 +58,24 @@ def convert_minimax_to_grpo_format(minimax_line):
         if symbol_info:
             prompt_lines.append(symbol_info)
         
-        # Asegurar que el prompt termine con un salto de línea
-        prompt = '\n'.join(prompt_lines) + '\n'
+        # Añadir prefijo del movimiento al prompt para forzar el formato
+        # El prompt final termina con "<|move|><|" sin salto de línea final para que la generación continúe ahí
+        prompt = '\n'.join(prompt_lines) + '\n<|move|><|'
         
-        # Construir la completion (solo el movimiento, sin pensamiento)
-        # Eliminar <|end|> duplicado si existe
-        if move_info.endswith('<|end|>'):
-            completion = move_info
-        else:
-            completion = f"{move_info}<|end|>"
+        # Construir la completion con la parte restante del movimiento
+        # Quitar el prefijo "<|move|><|" si está presente
+        tail = move_info
+        if tail.startswith('<|move|><|'):
+            tail = tail[len('<|move|><|'):]
+
+        # Asegurarnos de que termina con <|end|>
+        if not tail.endswith('<|end|>'):
+            if tail.endswith('|>'):
+                tail += '<|end|>'
+            else:
+                tail += '|><|end|>'
+
+        completion = tail
         
         return {
             "prompt": prompt,
