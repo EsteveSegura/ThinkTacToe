@@ -367,9 +367,6 @@ training_args = GRPOConfig(
     # Configuraciones GRPO específicas
     loss_type="dr_grpo",
     scale_rewards=True,
-    advantage_fn="reward_minus_baseline_ema",
-    baseline_beta=0.95,
-    log_keys=["reward", "advantage", "policy_loss", "grad_norm"],
 )
 
 print(f"🤖 Iniciando entrenamiento GRPO con configuración optimizada...")
