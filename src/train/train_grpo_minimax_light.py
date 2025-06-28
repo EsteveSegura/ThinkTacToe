@@ -148,6 +148,7 @@ train_args = GRPOConfig(
     warmup_steps=100,
     bf16=True,
     dataloader_num_workers=0,
+    max_steps=args.max_steps,
 )
 
 # --- Validación ligera -----------------------------------------------------------
@@ -194,5 +195,5 @@ if tokenizer:
     trainer.add_callback(SimpleValidationCallback(tokenizer, sample_prompts, args.val_every))
 
 print("🚀 Comenzando entrenamiento…")
-trainer.train(max_steps=args.max_steps)
+trainer.train()
 print("✅ Entrenamiento finalizado.") 
