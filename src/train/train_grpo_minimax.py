@@ -98,9 +98,16 @@ def contains_bad_token(text):
     return False
 
 def extract_move(text):
-    """Extrae el movimiento del texto generado por el modelo (formato estricto)"""
+    """Extrae el movimiento: admite que la completion empiece justo por la coordenada."""
+    # Caso 1: completion contiene todo el patrón completo
     m = re.search(r"<\|move\|><\|([0-2])-([0-2])\|><\|end\|>", text)
-    return (int(m.group(1)), int(m.group(2))) if m else None
+    if m:
+        return int(m.group(1)), int(m.group(2))
+    # Caso 2: solo la coordenada + sufijos, p.ej. "2-0|><|end|>"
+    m = re.search(r"([0-2])-([0-2])\|><\|end\|>", text)
+    if m:
+        return int(m.group(1)), int(m.group(2))
+    return None
 
 def extract_board_from_prompt(prompt):
     """Extrae el tablero del prompt para evaluar el movimiento"""
@@ -236,20 +243,18 @@ def evaluate_move_quality_minimax(board, move, current_player):
     return base_reward + score
 
 def evaluate_format_quality(completion):
-    """Evalúa la calidad del formato (solo formato estricto válido)"""
+    """Evalúa formato uniendo el prefijo estándar si no está presente."""
     if not completion:
         return -1.0
 
     completion = completion.strip()
+    # Asegurar que evaluamos contra la cadena completa
+    full_text = completion if completion.startswith('<|move|><|') else ('<|move|><|' + completion)
 
-    # Formato perfecto
-    if re.fullmatch(r"<\|move\|><\|[0-2]-[0-2]\|><\|end\|>", completion):
+    if re.fullmatch(r"<\|move\|><\|[0-2]-[0-2]\|><\|end\|>", full_text):
         return 1.0
-
-    # Formato correcto pero con texto extra alrededor
-    if re.search(r"<\|move\|><\|[0-2]-[0-2]\|><\|end\|>", completion):
+    if re.search(r"<\|move\|><\|[0-2]-[0-2]\|><\|end\|>", full_text):
         return 0.4
-
     return -1.0
 
 def reward_func(completions, prompts=None, **kwargs):
