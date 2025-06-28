@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
-model_name = "./qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-78"
+model_name = "./qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-156"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
@@ -43,7 +43,8 @@ if __name__ == "__main__":
 <|board_end|>
 <|turn|>bot
 <|symbol|>X
-<|move|>"""
+<|move|>
+"""
     infer(test_prompt)
 
 

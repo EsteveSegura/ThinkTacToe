@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Generador de dataset GRPO basado en el dataset minimax existente.
 Convierte el formato minimax al formato GRPO con prompts y completions.
@@ -57,6 +58,7 @@ def convert_minimax_to_grpo_format(minimax_line):
         if symbol_info:
             prompt_lines.append(symbol_info)
         
+        # Asegurar que el prompt termine con un salto de línea
         prompt = '\n'.join(prompt_lines) + '\n'
         
         # Construir la completion (solo el movimiento, sin pensamiento)
