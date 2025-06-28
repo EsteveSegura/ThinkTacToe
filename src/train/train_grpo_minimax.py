@@ -107,28 +107,29 @@ def extract_board_from_prompt(prompt):
     """Extrae el tablero del prompt para evaluar el movimiento"""
     try:
         # Buscar la sección del tablero entre <|board_start|> y <|board_end|>
-        board_start = prompt.find("<|board_start|>")
-        board_end = prompt.find("<|board_end|>")
+        board_start_tag = "<|board_start|>"
+        board_end_tag = "<|board_end|>"
+        board_start = prompt.find(board_start_tag)
+        board_end = prompt.find(board_end_tag)
         
         if board_start == -1 or board_end == -1:
             return None
             
-        board_text = prompt[board_start:board_end]
+        # Extraer solo el contenido entre los tags (sin incluir los tags)
+        board_text = prompt[board_start + len(board_start_tag):board_end]
         
         # Crear tablero vacío
         board = create_empty_board()
         
-        # Parsear las líneas del tablero
-        lines = board_text.split('\n')[1:-1]  # Excluir las etiquetas de inicio/fin
+        # Parsear las líneas del tablero (deben ser exactamente 3)
+        lines = [l.strip() for l in board_text.strip().split('\n') if l.strip()]
         
         for i, line in enumerate(lines):
-            if i >= 3:  # Solo las primeras 3 líneas
+            if i >= 3:
                 break
-                
             # Buscar patrones como <|0-0|><|X|> <|0-1|><|blank|> <|0-2|><|O|>
             cell_pattern = r'<\|(\d)-(\d)\|><\|([^|]+)\|>'
             matches = re.findall(cell_pattern, line)
-            
             for match in matches:
                 row, col, value = int(match[0]), int(match[1]), match[2]
                 if value == 'X':
@@ -136,17 +137,15 @@ def extract_board_from_prompt(prompt):
                 elif value == 'O':
                     board[row][col] = 'O'
                 # 'blank' se mantiene como None
-        
         return board
     except Exception as e:
         print(f"Error parsing board: {e}")
         return None
 
 def get_current_player_from_prompt(prompt):
-    """Extrae el jugador actual del prompt - CORREGIDO"""
-    # Corregido para buscar <|player|>X o <|player|>O en lugar de <|turn|>
-    m = re.search(r'<\|player\|>([XO])', prompt)
-    return m.group(1) if m else None
+    """Extrae el jugador actual del prompt (acepta <|symbol|> o <|player|>)"""
+    m = re.search(r'<\|(symbol|player)\|>([XO])', prompt)
+    return m.group(2) if m else None
 
 def evaluate_move_quality_minimax(board, move, current_player):
     """Evalúa la calidad del movimiento comparándolo con el movimiento óptimo de minimax"""
