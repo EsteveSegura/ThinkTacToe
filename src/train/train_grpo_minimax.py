@@ -98,9 +98,9 @@ def contains_bad_token(text):
     return False
 
 def extract_move(text):
-    """Extrae el movimiento del texto generado por el modelo"""
-    # Corregido para solo permitir coordenadas válidas (0-2)
-    match = re.search(r"<\|move\|><\|([0-2])-([0-2])\|><\|end\|>", text)
+    """Extrae el movimiento del texto generado por el modelo (acepta <|end|> opcional)"""
+    # Aceptar tanto con <|end|> como sin él
+    match = re.search(r"<\|move\|><\|([0-2])-([0-2])\|>(?:<\|end\|>)?", text)
     return (int(match.group(1)), int(match.group(2))) if match else None
 
 def extract_board_from_prompt(prompt):
@@ -238,24 +238,28 @@ def evaluate_move_quality_minimax(board, move, current_player):
     return base_reward + score
 
 def evaluate_format_quality(completion):
-    """Evalúa la calidad del formato de la completion"""
+    """Evalúa la calidad del formato de la completion (permite <|end|> opcional)"""
     if not completion:
         return -1.0
-    
+
     score = 0.0
-    
-    # Verificar formato básico del movimiento - CORREGIDO para coordenadas válidas
+
+    # Formato perfecto con <|end|>
     if re.fullmatch(r"<\|move\|><\|[0-2]-[0-2]\|><\|end\|>", completion.strip()):
-        score += 1.0  # Formato perfecto
+        score += 1.0
+    # Formato correcto sin <|end|>
+    elif re.fullmatch(r"<\|move\|><\|[0-2]-[0-2]\|>", completion.strip()):
+        score += 0.8
+    # Contiene la estructura de movimiento en alguna parte
     elif re.search(r"<\|move\|><\|[0-2]-[0-2]\|>", completion):
-        score += 0.5  # Formato parcialmente correcto
+        score += 0.5
     else:
         score -= 1.0  # Formato incorrecto
-    
-    # Penalizar texto extra
-    if len(completion.strip()) > 50:  # Debería ser muy corto
-        score -= 0.5
-    
+
+    # Penalizar texto extra (solo si supera 30 caracteres)
+    if len(completion.strip()) > 30:
+        score -= 0.3
+
     return score
 
 def reward_func(completions, prompts=None, **kwargs):
@@ -352,7 +356,7 @@ training_args = GRPOConfig(
     save_total_limit=2,
     logging_steps=25,
     warmup_steps=20,
-    max_completion_length=12,  # Reducido para evitar spam
+    max_completion_length=20,  # Reducido para evitar spam
     temperature=0.7,  # Aumentado para evitar problemas numéricos
     top_p=0.9,
     repetition_penalty=1.0,  # Reducido para evitar problemas
