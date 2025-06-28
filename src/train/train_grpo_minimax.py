@@ -341,7 +341,7 @@ def reward_func(completions, prompts=None, **kwargs):
 # Configuración para entrenamiento GRPO optimizado
 training_args = GRPOConfig(
     output_dir="qwen2.5-0.5b-tictactoe-grpo-minimax",
-    num_train_epochs=1,
+    num_train_epochs=3,
     per_device_train_batch_size=4,  # Reducido aún más para estabilidad
     gradient_accumulation_steps=4,  # Aumentado para mantener batch efectivo
     learning_rate=5e-6,  # Learning rate más conservador
@@ -350,7 +350,7 @@ training_args = GRPOConfig(
     save_steps=100,
     save_total_limit=2,
     logging_steps=25,
-    warmup_steps=20,
+    warmup_steps=100,
     max_completion_length=20,  # Reducido para evitar spam
     temperature=0.7,  # Aumentado para evitar problemas numéricos
     top_p=0.9,
@@ -363,11 +363,13 @@ training_args = GRPOConfig(
     # Configuraciones adicionales para estabilidad
     max_grad_norm=1.0,
     weight_decay=0.01,
-    lr_scheduler_type="cosine",
+    lr_scheduler_type="constant_with_warmup",
     # Configuraciones GRPO específicas
     loss_type="dr_grpo",
-    scale_rewards=False,
-    # Configuraciones de generación más conservadoras
+    scale_rewards=True,
+    advantage_fn="reward_minus_baseline_ema",
+    baseline_beta=0.95,
+    log_keys=["reward", "advantage", "policy_loss", "grad_norm"],
 )
 
 print(f"🤖 Iniciando entrenamiento GRPO con configuración optimizada...")
