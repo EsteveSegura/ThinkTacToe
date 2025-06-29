@@ -186,7 +186,7 @@ def infer(model, tokenizer, prompt: str, max_new_tokens: int = 600):
         )
 
     new_tokens = outputs[0][inputs["input_ids"].shape[1]:]
-    output_text = tokenizer.decode(new_tokens, skip_special_tokens=True)
+    output_text = tokenizer.decode(new_tokens, skip_special_tokens=False, clean_up_tokenization_spaces=False)
 
     if "<|end|>" in output_text:
         output_text = output_text.split("<|end|>")[0] + "<|end|>"
@@ -215,7 +215,7 @@ def create_prompt_minimax(board: list, player: str = 'X') -> str:
     else:
         turn = 'player'
     
-    return f"<|board_start|>\n{board_repr}\n<|board_end|>\n<|turn|>{turn}\n<|symbol|>{player}\n<|move|>"
+    return f"<|board_start|>\n{board_repr}\n<|board_end|>\n<|turn|>{turn}\n<|symbol|>{player}\n<|move|><|"
 
 def test_model(model_config: dict, num_games: int = 10) -> pd.DataFrame:
     """
