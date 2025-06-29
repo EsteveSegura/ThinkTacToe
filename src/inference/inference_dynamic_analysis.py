@@ -320,7 +320,7 @@ if __name__ == "__main__":
     
     for model_config in MODELS_CONFIG:
         try:
-            df = test_model(model_config, num_games=500)
+            df = test_model(model_config, num_games=300)
             if not df.empty:
                 all_results.append(df)
                 
