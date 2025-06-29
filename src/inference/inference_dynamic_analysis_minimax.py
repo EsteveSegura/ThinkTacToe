@@ -217,7 +217,7 @@ def create_prompt_minimax(board: list, player: str = 'X') -> str:
     
     return f"<|board_start|>\n{board_repr}\n<|board_end|>\n<|turn|>{turn}\n<|symbol|>{player}\n<|move|><|"
 
-def test_model(model_config: dict, num_games: int = 10) -> pd.DataFrame:
+def test_model(model_config: dict, num_games: int = 300) -> pd.DataFrame:
     """
     Prueba un modelo específico y retorna los resultados.
     """
@@ -315,7 +315,7 @@ if __name__ == "__main__":
     
     for model_config in MODELS_CONFIG:
         try:
-            df = test_model(model_config, num_games=10)
+            df = test_model(model_config, num_games=300)
             if not df.empty:
                 all_results.append(df)
                 
