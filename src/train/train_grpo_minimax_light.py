@@ -59,7 +59,7 @@ def latest_dataset() -> Path:
 # --- Parsing args ----------------------------------------------------------------
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="./datasets/tictactoe_grpo_from_minimax_20250629_022319.jsonl", help="Ruta al dataset GRPO jsonl")
-parser.add_argument("--model", type=str, default="qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-156", help="Modelo base")
+parser.add_argument("--model", type=str, default="qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-852", help="Modelo base")
 parser.add_argument("--output_dir", type=str, default="light_grpo_run", help="Directorio de salida")
 parser.add_argument("--max_steps", type=int, default=1000, help="Pasos máximo de entrenamiento")
 parser.add_argument("--logging_steps", type=int, default=25)
