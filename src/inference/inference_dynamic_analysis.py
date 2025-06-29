@@ -29,7 +29,7 @@ MODELS_CONFIG = [
         {
         'name': 'qwen2.5-0.5b-tictactoe-sft-nothink-minmax',
         'path': '/home/ThinkTacToe/qwen2.5-0.5b-tictactoe-sft-nothink-minmax/checkpoint-852',
-        'has_think': True
+        'has_think': False
     },
 
 ]
@@ -187,7 +187,7 @@ def infer(model, tokenizer, prompt: str, max_new_tokens: int = 600):
         )
 
     new_tokens = outputs[0][inputs["input_ids"].shape[1]:]
-    output_text = tokenizer.decode(new_tokens, skip_special_tokens=False, clean_up_tokenization_spaces=False)
+    output_text = tokenizer.decode(new_tokens, skip_special_tokens=True)
 
     if "<|end|>" in output_text:
         output_text = output_text.split("<|end|>")[0] + "<|end|>"
@@ -210,21 +210,19 @@ def create_prompt(board: list, has_think: bool) -> str:
     """
     board_repr = board_to_token_representation(board)
     
-    # Determinar turno (asumimos que 'X' es el bot)
-    turn = 'bot' if player == 'X' else 'player'
-
+    # Calcular el turno basado en el número de movimientos realizados
+    moves_count = sum(1 for row in board for cell in row if cell is not None)
+    turn = moves_count + 1
+    
+    # Determinar el símbolo del jugador (X siempre va primero)
+    player = 'X'
+    
     if has_think:
         # Modelos con capacidad de pensar
-        return (
-            f"<|board_start|>\n{board_repr}\n<|board_end|>\n"
-            f"<|turn|>{turn}\n<|symbol|>{player}\n<player_think>"
-        )
+        return f"<|board_start|>\n{board_repr}\n<|board_end|>\n<|turn|>{turn}\n<|symbol|>{player}\n<|player_think>"
     else:
-        # Modelos sin capacidad de pensar
-        return (
-            f"<|board_start|>\n{board_repr}\n<|board_end|>\n"
-            f"<|turn|>{turn}\n<|symbol|>{player}\n<|move|><|"
-        )
+        # Modelos sin capacidad de pensar (nothink)
+        return f"<|board_start|>\n{board_repr}\n<|board_end|>\n<|turn|>{turn}\n<|symbol|>{player}\n<|move|><|"
 
 def test_model(model_config: dict, num_games: int = 10) -> pd.DataFrame:
     """
