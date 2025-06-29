@@ -6,6 +6,7 @@ Produce ejemplos en formato JSONL para entrenamiento de modelos.
 
 import json
 import random
+import argparse
 from typing import List, Tuple, Optional, Set
 from itertools import product
 import os
@@ -226,7 +227,7 @@ class MinimaxDatasetGenerator:
         
         return {"text": example_text}
     
-    def generate_dataset(self, total_examples: int = 1000) -> List[dict]:
+    def generate_dataset(self, total_examples: int = 10000) -> List[dict]:
         """Genera el dataset completo."""
         examples = []
         
@@ -274,11 +275,15 @@ class MinimaxDatasetGenerator:
 
 def main():
     """Función principal para generar el dataset."""
+    parser = argparse.ArgumentParser(description="Genera dataset minimax para Tic-Tac-Toe")
+    parser.add_argument("--total_examples", "-n", type=int, default=10000, help="Número total de ejemplos a generar (default 10000)")
+    args = parser.parse_args()
+
     generator = MinimaxDatasetGenerator()
-    
-    # Generar dataset
-    print("Generando dataset de Tic-Tac-Toe con movimientos óptimos...")
-    examples = generator.generate_dataset(total_examples=1000)
+
+    total = args.total_examples
+    print(f"Generando dataset de Tic-Tac-Toe con {total} ejemplos óptimos…")
+    examples = generator.generate_dataset(total_examples=total)
     
     # Guardar dataset
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

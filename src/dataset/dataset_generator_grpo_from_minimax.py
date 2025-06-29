@@ -91,7 +91,7 @@ def generate_grpo_dataset_from_minimax():
     Genera el dataset GRPO a partir del dataset minimax existente.
     """
     # Usar el archivo especificado por el usuario
-    minimax_path = Path("datasets/tictactoe_minimax_20250624_205741.jsonl")
+    minimax_path = Path("datasets/tictactoe_minimax_20250629_022203.jsonl")
     if not minimax_path.exists():
         print(f"❌ No se encontró el archivo {minimax_path}")
         return

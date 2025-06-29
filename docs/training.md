@@ -242,7 +242,7 @@ accelerate launch src/train/train_sft.py \
 
 accelerate launch src/train/train_sft.py \
     --model_name "Qwen/Qwen2.5-3B" \
-    --data_files "./datasets/tictactoe_minimax_20250624_214328.jsonl" \
+    --data_files "./datasets/tictactoe_minimax_20250629_022203.jsonl" \
     --output_dir "qwen2.5-0.5b-tictactoe-sft-nothink-minmax" \
     --logs_dir "./logs"
 
